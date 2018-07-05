@@ -4,6 +4,13 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+node_modules/
+*~
+._*
+.DS_Store
+build/
+webpack.config.js
+*report.txt
 
 # Runtime data
 pids

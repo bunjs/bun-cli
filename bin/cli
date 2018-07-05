@@ -1,0 +1,234 @@
+#!/usr/bin/env node
+
+// require('shelljs/global');
+// var argv = require('yargs').argv;
+const exec = require('child_process').exec;
+const pm2 = require('pm2');
+// const fis = require('fis3');
+// var shell = require("shelljs");
+const program = require('commander')
+const prompt = require('co-prompt')
+const co = require('co')
+const chalk = require('chalk')
+const chokidar = require('chokidar');
+const webpack = require("webpack");
+
+// var argv = require('minimist')(process.argv.slice(2));
+// var path = require('path');
+
+program
+    .version('1.0.0')
+
+program
+    .command('init <option>')
+    .description('Generate a new app')
+    .action((option) => {
+        co(function*() {
+            if (option == 'app') {
+                let appName = yield prompt('App name: ')
+                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunapp'
+                let cmdStr = `git clone ${gitUrl} ${appName} && cd ${appName} `
+                    + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/show/Home.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
+
+                console.log(chalk.white('\n Start generating...'))
+
+                exec(cmdStr, (error, stdout, stderr) => {
+                    if (error) {
+                        console.log(stdout)
+                        console.log(error)
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Generation completed!'))
+                    console.log(`\n cd ${appName} && npm install \n`)
+                    process.exit()
+                })
+            } else if (option == 'project') {
+                let projectName = yield prompt('Project name: ')
+                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
+                let cmdStr = `git clone ${gitUrl} ${projectName} && cd ${projectName} && rm -rf .git && sed -i '' 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i '' 's/$_projectname/${projectName}/g' package.json`
+
+                console.log(chalk.white('\n Start generating...'))
+
+                exec(cmdStr, (error, stdout, stderr) => {
+                    if (error) {
+                        console.log(stdout)
+                        console.log(error)
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Generation completed!'))
+                    console.log(`\n cd ${projectName} && npm install \n`)
+                    process.exit()
+                })
+            } else if (option == 'ssrapp') {
+                let projectName = yield prompt('App name: ')
+                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
+                let cmdStr = `git clone ${gitUrl} ${appName} && cd ${appName} `
+                    + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' package-lock.json ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/index.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/show/Example.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/DataStation.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleHomeShow.js ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
+
+                console.log(chalk.white('\n Start generating...'))
+
+                exec(cmdStr, (error, stdout, stderr) => {
+                    if (error) {
+                        console.log(stdout)
+                        console.log(error)
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Generation completed!'))
+                    console.log(`\n cd ${projectName} && npm install \n`)
+                    process.exit()
+                })
+            }
+
+        })
+    })
+
+program
+    .command('run <app>')
+    .description('start the bunko')
+    .action((app) => {
+        co(function*() {
+            console.log(chalk.white('\n Starting bunko...'))
+            pm2.connect(function(err) {
+                if (err) {
+                    console.error(err);
+                    process.exit(2);
+                }
+
+                pm2.start({
+                    name: app,
+                    script: process.cwd() + '/entry.js', // Script to be run
+                    watch: true,
+                    ignore_watch: [process.cwd() + "/logs",process.cwd() + "/node_modules"],
+                    error: process.cwd() + '/logs/bun/bun.log.wf',
+                    output: process.cwd() + '/logs/bun/bun.log',
+                    max_memory_restart: '1000M' // Optional: Restarts your app if it reaches 100Mo
+                }, function(err, apps) {
+                    pm2.disconnect(); // Disconnects from PM2
+                    if (err) {
+                        throw err;
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Starting completed!'))
+                    process.exit()
+                    
+                });
+            });
+        })
+    })
+program
+    .command('stop <app>')
+    .description('stop the bunko')
+    .action((app) => {
+        co(function*() {
+
+            pm2.connect(function(err) {
+                if (err) {
+                    console.error(err);
+                    process.exit(2);
+                }
+
+                pm2.stop(app, function(err, apps) {
+                    pm2.disconnect(); // Disconnects from PM2
+                    if (err) {
+                        throw err;
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Stoping completed!'))
+                    process.exit()
+                    
+                });
+            });
+        })
+    })
+program
+    .command('release')
+    .description('deploy the app')
+    .alias('r')
+    .option("-d, --dev", "if development")
+    .option("-t, --to [path]", "Which project to deploy")
+    .option("-w, --watch", "if watching the app")
+    // .option("-dev, --dev", "if development")
+    .action((options) => {
+        co(function*() {
+            let path = options.to
+            let dev = options.dev
+            let webpackConfig;
+            if (dev) {
+                userConf = require(process.cwd() + '/config.js')
+                webpackConfig = require('./webpack.config-dev.js')(userConf)
+                // webpackConfig = require(process.cwd() + '/webpack.config-dev.js')
+            } else {
+                userConf = require(process.cwd() + '/config.js')
+                webpackConfig = require('./webpack.config.js')(userConf)
+                // webpackConfig = require(process.cwd() + '/webpack.config.js')
+            }
+            
+            console.log(chalk.white('\n Start deploying...'))
+            webpack(webpackConfig, (err, stats) => {
+
+                if (err || stats.hasErrors()) {
+                    // 在这里处理错误
+                    console.log(stats)
+                    process.exit()
+                }
+                let cmdStr = `cp -r ./build/server/* ${path}/app`
+                        + `&& cp -r ./build/conf/* ${path}/conf `
+                        + `&& cp -r ./build/static/* ${path}/static `
+                        + `&& cp -r ./build/template/* ${path}/template`
+                        + `&& cp -r ./build/src/* ${path}/src`
+                        + `&& rm -rf ./build`
+                exec(cmdStr, (error, stdout, stderr) => {
+                    if (error) {
+                        console.log(error)
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Deploy completed!'))
+                    if (options.watch) {
+                        // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
+                        const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
+                        // watcher.on('ready', () => {
+                            
+                            watcher.on('change', (path, stats) => {
+                                if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
+                                webpack(webpackConfig, (err, stats) => {
+                                    if (err || stats.hasErrors()) {
+                                        // 在这里处理错误
+                                        console.log(err)
+                                        process.exit()
+                                    }
+                                    exec(cmdStr, (error, stdout, stderr) => {
+                                        if (error) {
+                                            console.log(error)
+                                            process.exit()
+                                        }
+                                        console.log(chalk.green('\n √ Deploy completed!'))
+                                    });
+                                    
+                                });
+                                
+                            });
+                        // });
+                    } else {
+                        
+                        process.exit()
+                    }
+                })
+                
+            });
+        })
+    })
+
+program.parse(process.argv);

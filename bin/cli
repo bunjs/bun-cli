@@ -12,6 +12,7 @@ const co = require('co')
 const chalk = require('chalk')
 const chokidar = require('chokidar');
 const webpack = require("webpack");
+const download = require("download-git-repo");
 
 // var argv = require('minimist')(process.argv.slice(2));
 // var path = require('path');
@@ -26,8 +27,8 @@ program
         co(function*() {
             if (option == 'app') {
                 let appName = yield prompt('App name: ')
-                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunapp'
-                let cmdStr = `git clone ${gitUrl} ${appName} && cd ${appName} `
+                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunapp'
+                let cmdStr = `cd ${appName} `
                     + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
@@ -35,38 +36,49 @@ program
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
 
                 console.log(chalk.white('\n Start generating...'))
-
-                exec(cmdStr, (error, stdout, stderr) => {
-                    if (error) {
-                        console.log(stdout)
-                        console.log(error)
+                download('bunkoa/bun-app', './' + appName, function (err) {
+                    if (err) {
+                        console.log(err)
                         process.exit()
                     }
-                    console.log(chalk.green('\n √ Generation completed!'))
-                    console.log(`\n cd ${appName} && npm install \n`)
-                    process.exit()
+                    exec(cmdStr, (error, stdout, stderr) => {
+                        if (error) {
+                            console.log(stdout)
+                            console.log(error)
+                            process.exit()
+                        }
+                        console.log(chalk.green('\n √ Generation completed!'))
+                        console.log(`\n cd ${appName} && npm install \n`)
+                        process.exit()
+                    })
                 })
+                
             } else if (option == 'project') {
                 let projectName = yield prompt('Project name: ')
-                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
-                let cmdStr = `git clone ${gitUrl} ${projectName} && cd ${projectName} && rm -rf .git && sed -i '' 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i '' 's/$_projectname/${projectName}/g' package.json`
+                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
+                let cmdStr = `cd ${projectName} && rm -rf .git && sed -i '' 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i '' 's/$_projectname/${projectName}/g' package.json`
 
                 console.log(chalk.white('\n Start generating...'))
-
-                exec(cmdStr, (error, stdout, stderr) => {
-                    if (error) {
-                        console.log(stdout)
-                        console.log(error)
+                download('bunkoa/bun-project', './' + projectName, function (err) {
+                    if (err) {
+                        console.log(err)
                         process.exit()
                     }
-                    console.log(chalk.green('\n √ Generation completed!'))
-                    console.log(`\n cd ${projectName} && npm install \n`)
-                    process.exit()
+                    exec(cmdStr, (error, stdout, stderr) => {
+                        if (error) {
+                            console.log(stdout)
+                            console.log(error)
+                            process.exit()
+                        }
+                        console.log(chalk.green('\n √ Generation completed!'))
+                        console.log(`\n cd ${projectName} && npm install \n`)
+                        process.exit()
+                    })
                 })
             } else if (option == 'ssrapp') {
                 let projectName = yield prompt('App name: ')
-                let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
-                let cmdStr = `git clone ${gitUrl} ${appName} && cd ${appName} `
+                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
+                let cmdStr = `cd ${appName} `
                     + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' package-lock.json ` 
@@ -79,16 +91,21 @@ program
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
 
                 console.log(chalk.white('\n Start generating...'))
-
-                exec(cmdStr, (error, stdout, stderr) => {
-                    if (error) {
-                        console.log(stdout)
-                        console.log(error)
+                download('bunkoa/bun-ssrapp', './' + appName, function (err) {
+                    if (err) {
+                        console.log(err)
                         process.exit()
                     }
-                    console.log(chalk.green('\n √ Generation completed!'))
-                    console.log(`\n cd ${projectName} && npm install \n`)
-                    process.exit()
+                    exec(cmdStr, (error, stdout, stderr) => {
+                        if (error) {
+                            console.log(stdout)
+                            console.log(error)
+                            process.exit()
+                        }
+                        console.log(chalk.green('\n √ Generation completed!'))
+                        console.log(`\n cd ${appName} && npm install \n`)
+                        process.exit()
+                    })
                 })
             }
 

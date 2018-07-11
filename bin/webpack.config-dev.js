@@ -22,7 +22,7 @@ module.exports = (userConf) => {
 
         // npm公共模块
         if (userConf.libs) {
-            obj['libs'] = userConf.libs;
+            obj['libs'] = userConf.libs || '';
         }
 
         files.forEach(function (name, index) {
@@ -138,6 +138,16 @@ module.exports = (userConf) => {
                         loader: 'url-loader',
                         options:{
                             limit: 5*1024,
+                            name:'[path][name].[ext]',
+                            outputPath: userConf.dirname + `/build/static/${appname}/img`
+                        }
+                    }
+                },
+                {
+                    test: /\.(png|jpg|jpeg|gif|svg|eot|woff|woff2|ttf)$/,
+                    use: {
+                        loader: 'file-loader',
+                        options:{
                             name:'[path][name].[ext]',
                             outputPath: userConf.dirname + `/build/static/${appname}/img`
                         }

@@ -1,6 +1,6 @@
 {
   "name": "bunjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "bin": {
     "bun": "bin/cli"
@@ -11,6 +11,7 @@
   "author": "liguohui01",
   "license": "ISC",
   "dependencies": {
+    "download-git-repo": "^1.0.2",
     "autoprefixer": "^8.6.2",
     "chalk": "^2.1.0",
     "chokidar": "^1.7.0",

@@ -36,7 +36,7 @@ program
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
 
                 console.log(chalk.white('\n Start generating...'))
-                download('bunkoa/bun-app', './' + appName, function (err) {
+                download('bunjs/bun-app', './' + appName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()
@@ -59,7 +59,7 @@ program
                 let cmdStr = `cd ${projectName} && rm -rf .git && sed -i '' 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i '' 's/$_projectname/${projectName}/g' package.json`
 
                 console.log(chalk.white('\n Start generating...'))
-                download('bunkoa/bun-project', './' + projectName, function (err) {
+                download('bunjs/bun-project', './' + projectName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()
@@ -81,7 +81,8 @@ program
                 let cmdStr = `cd ${appName} `
                     + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' package-lock.json ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/page/home/home.jsx ` 
+                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/page/pageone/pageone.jsx ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/index.js ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/action/show/Example.js ` 
@@ -91,7 +92,7 @@ program
                     + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
 
                 console.log(chalk.white('\n Start generating...'))
-                download('bunkoa/bun-ssrapp', './' + appName, function (err) {
+                download('bunjs/bun-ssrapp', './' + appName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()

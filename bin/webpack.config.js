@@ -21,8 +21,8 @@ module.exports = (userConf) => {
         var files = fs.readdirSync(path.resolve(userConf.dirname, './src/entry'));
 
         // npm公共模块
-        if (userConf.libs) {
-            obj['libs'] = userConf.libs || '';
+        if (userConf.libs && userConf.libs.length > 0) {
+            obj['libs'] = userConf.libs;
         }
 
         files.forEach(function (name, index) {
@@ -84,7 +84,8 @@ module.exports = (userConf) => {
         entry: opts.entries,
         output: {
             path: userConf.dirname + `/build/static/${appname}`,
-            filename: "[name].min_[chunkhash:8].js",
+            filename: "js/[name].min_[chunkhash:8].js",
+            chunkFilename: "js/[name].chunk.min_[chunkhash:8].js"
         },
         resolve:{
             alias:{
@@ -136,44 +137,101 @@ module.exports = (userConf) => {
                         loader: 'url-loader',
                         options:{
                             limit: 5*1024,
-                            name:'[path][name].[ext]',
-                            outputPath: userConf.dirname + `/build/static/${appname}/img`
-                        }
-                    }
-                },
-                {
-                    test: /\.(png|jpg|jpeg|gif|svg|eot|woff|woff2|ttf)$/,
-                    use: {
-                        loader: 'file-loader',
-                        options:{
-                            name:'[path][name].[ext]',
-                            outputPath: userConf.dirname + `/build/static/${appname}/img`
+                            name:'img/[name].[hash:7].[ext]',
+                            // outputPath: userConf.dirname + `/build/static/${appname}/img`
+                            publicPath: userConf.publicStaticDomain + `/static/${appname}`
                         }
                     }
                 }
 
             ].concat(rules)
         },
-        optimization: {
-            minimizer: [
-                new UglifyJsPlugin({
-                    cache: true,
-                    parallel: true,
-                    sourceMap: true
-                }),
-                new OptimizeCSSAssetsPlugin({}),  // use OptimizeCSSAssetsPlugin
-            ],
-            splitChunks: {
-                cacheGroups: {
-                    styles: {            
-                        name: 'styles',
-                        test: /\.less|css$/,
-                        chunks: 'all',    // merge all the css chunk to one file
-                        enforce: true
+        optimization: (function () {
+            if (userConf.libs && userConf.libs.length > 0) {
+                return {
+                    minimizer: (function () {
+                        let res = [];
+                        if (userConf.uglifyJs) {
+                            res.push(new UglifyJsPlugin({
+                                cache: true,
+                                parallel: true,
+                                sourceMap: true
+                            }));
+                        }
+                        if (userConf.optimizeCSS) {
+                            res.push(new OptimizeCSSAssetsPlugin({}));
+                        }
+                        if (res.length < 1) {
+                            return false;
+                        }
+                        return res;
+                    })(),
+                    splitChunks: {
+                        cacheGroups: {
+                            default: false
+                        }
                     }
                 }
             }
-        },
+
+            return {
+                minimizer: (function () {
+                    let res = [];
+                    if (userConf.uglifyJs) {
+                        res.push(new UglifyJsPlugin({
+                            cache: true,
+                            parallel: true,
+                            sourceMap: true
+                        }));
+                    }
+                    if (userConf.optimizeCSS) {
+                        res.push(new OptimizeCSSAssetsPlugin({}));
+                    }
+                    if (res.length < 1) {
+                        return false;
+                    }
+                    return res;
+                })(),
+                splitChunks: {
+                    chunks: 'async',
+                    minSize: 30000,
+                    minChunks: 1,
+                    maxAsyncRequests: 5,
+                    maxInitialRequests: 3,
+                    automaticNameDelimiter: '_',
+                    name: true,
+                    cacheGroups: {
+                        // 入口引入超过2次的代码
+                        commons: (function () {
+                            if (userConf.commons) {
+                                return {
+                                    test: /\.js/,
+                                    name: "commons",
+                                    chunks: "initial",
+                                    minChunks: 2,
+                                    reuseExistingChunk: true,
+                                    priority: -10
+                                }
+                            }
+                            return false;
+                        })(),
+                        // 所有node_modules的模块打包
+                        vendors: (function () {
+                            if (userConf.vendors) {
+                                return {
+                                    test: /[\\/]node_modules[\\/]/,
+                                    name: "vendors",
+                                    chunks: "initial",
+                                    priority: -20
+                                }
+                            }
+                            return false;
+                        })(),
+                        
+                    }
+                }
+            }
+        })(),
         plugins: [
             new ManifestPlugin({
                 writeToFileEmit: true,
@@ -210,7 +268,7 @@ module.exports = (userConf) => {
 
             new MiniCssExtractPlugin({
                 filename: "css/[name].[contenthash:12].css",
-                chunkFilename: "css/[id].[contenthash:12].css"
+                chunkFilename: "css/[name].chunk.[contenthash:12].css"
             }),
         ]
 

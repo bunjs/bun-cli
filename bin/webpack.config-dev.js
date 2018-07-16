@@ -6,6 +6,7 @@ module.exports = (userConf) => {
     const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
     const MiniCssExtractPlugin = require("mini-css-extract-plugin");
     const ManifestPlugin = require('webpack-manifest-plugin');
+    // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
     // var ExtractTextPlugin = require("extract-text-webpack-plugin");// webpack4暂不支持
     const autoprefixer = require('autoprefixer');
 
@@ -21,8 +22,8 @@ module.exports = (userConf) => {
         var files = fs.readdirSync(path.resolve(userConf.dirname, './src/entry'));
 
         // npm公共模块
-        if (userConf.libs) {
-            obj['libs'] = userConf.libs || '';
+        if (userConf.libs && userConf.libs.length > 0) {
+            obj['libs'] = userConf.libs;
         }
 
         files.forEach(function (name, index) {
@@ -86,6 +87,7 @@ module.exports = (userConf) => {
         output: {
             path: userConf.dirname + `/build/static/${appname}`,
             filename: "js/[name].js",
+            chunkFilename: "js/[name].chunk.js",
         },
         resolve:{
             alias:{
@@ -138,28 +140,70 @@ module.exports = (userConf) => {
                         loader: 'url-loader',
                         options:{
                             limit: 5*1024,
-                            name:'[path][name].[ext]',
-                            outputPath: userConf.dirname + `/build/static/${appname}/img`
-                        }
-                    }
-                },
-                {
-                    test: /\.(png|jpg|jpeg|gif|svg|eot|woff|woff2|ttf)$/,
-                    use: {
-                        loader: 'file-loader',
-                        options:{
-                            name:'[path][name].[ext]',
-                            outputPath: userConf.dirname + `/build/static/${appname}/img`
+                            name:'img/[name].[hash:7].[ext]',
+                            // outputPath: 'img/',
+                            publicPath: userConf.localStaticDomain + `/${appname}`
                         }
                     }
                 }
 
             ].concat(rules)
         },
-        optimization: {
-            minimize: false, //生成模式默认开启
-        },
+        optimization: (function () {
+            if (userConf.libs && userConf.libs.length > 0) {
+                return {
+                    minimize: false, //生成模式默认开启
+                    splitChunks: {
+                        cacheGroups: {
+                            default: false
+                        }
+                    }
+                }
+            }
+
+            return {
+                minimize: false, //生成模式默认开启
+                splitChunks: {
+                    chunks: 'async',
+                    minSize: 30000,
+                    minChunks: 1,
+                    maxAsyncRequests: 5,
+                    maxInitialRequests: 3,
+                    automaticNameDelimiter: '_',
+                    name: true,
+                    cacheGroups: {
+                        // 入口引入超过2次的代码
+                        commons: (function () {
+                            if (userConf.commons) {
+                                return {
+                                    test: /\.js/,
+                                    name: "commons",
+                                    chunks: "initial",
+                                    minChunks: 2,
+                                    reuseExistingChunk: true,
+                                    priority: -10
+                                }
+                            }
+                            return false;
+                        })(),
+                        // 所有node_modules的模块打包
+                        vendors: (function () {
+                            if (userConf.vendors) {
+                                return {
+                                    test: /[\\/]node_modules[\\/]/,
+                                    name: "vendors",
+                                    chunks: "initial",
+                                    priority: -20
+                                }
+                            }
+                            return false;
+                        })(),
+                    }
+                }
+            }
+        })(),
         plugins: [
+            // new BundleAnalyzerPlugin(),
             new ManifestPlugin({
                 writeToFileEmit: true,
                 publicPath: userConf.localStaticDomain + `/${appname}/`
@@ -196,7 +240,7 @@ module.exports = (userConf) => {
 
             new MiniCssExtractPlugin({
                 filename: "css/[name].css",
-                chunkFilename: "css/[id].css"
+                chunkFilename: "css/[name].chunk.css"
             }),
         ]
 

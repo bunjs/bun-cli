@@ -21,9 +21,9 @@ module.exports = (userConf) => {
         var files = fs.readdirSync(path.resolve(userConf.dirname, './src/entry'));
 
         // npm公共模块
-        if (userConf.libs && userConf.libs.length > 0) {
-            obj['libs'] = userConf.libs;
-        }
+        // if (userConf.libs && userConf.libs.length > 0) {
+        //     obj['libs'] = userConf.libs;
+        // }
 
         files.forEach(function (name, index) {
             var stat = fs.statSync(path.resolve(userConf.dirname, './src/entry', name));
@@ -129,8 +129,7 @@ module.exports = (userConf) => {
                             }
                         }
                     ]
-                }, 
-                
+                },
                 {
                     test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf)$/,
                     use: {
@@ -146,92 +145,72 @@ module.exports = (userConf) => {
 
             ].concat(rules)
         },
-        optimization: (function () {
-            if (userConf.libs && userConf.libs.length > 0) {
-                return {
-                    minimizer: (function () {
-                        let res = [];
-                        if (userConf.uglifyJs) {
-                            res.push(new UglifyJsPlugin({
-                                cache: true,
-                                parallel: true,
-                                sourceMap: true
-                            }));
-                        }
-                        if (userConf.optimizeCSS) {
-                            res.push(new OptimizeCSSAssetsPlugin({}));
-                        }
-                        if (res.length < 1) {
-                            return false;
-                        }
-                        return res;
-                    })(),
-                    splitChunks: {
-                        cacheGroups: {
-                            default: false
-                        }
-                    }
+        optimization: {
+            minimizer: (function () {
+                let res = [];
+                if (userConf.uglifyJs) {
+                    res.push(new UglifyJsPlugin({
+                        cache: true,
+                        parallel: true,
+                        sourceMap: false
+                    }));
                 }
-            }
-
-            return {
-                minimizer: (function () {
-                    let res = [];
-                    if (userConf.uglifyJs) {
-                        res.push(new UglifyJsPlugin({
-                            cache: true,
-                            parallel: true,
-                            sourceMap: true
-                        }));
+                if (userConf.optimizeCSS) {
+                    res.push(new OptimizeCSSAssetsPlugin({}));
+                }
+                if (res.length < 1) {
+                    return false;
+                }
+                return res;
+            })(),
+            splitChunks: {
+                chunks: 'async',
+                minSize: 30000,
+                minChunks: 1,
+                maxAsyncRequests: 5,
+                maxInitialRequests: 3,
+                automaticNameDelimiter: '_',
+                name: true,
+                cacheGroups: (function () {
+                    let libsReg = '';
+                    if (userConf.libs && userConf.libs.length > 0) {
+                        libsReg = new RegExp('[\\/]node_modules[\\/](' + userConf.libs.join('|') + ')', 'ig');
+                    } else {
+                        libsReg = new RegExp('[\\/]node_modules[\\/]', 'ig');
                     }
-                    if (userConf.optimizeCSS) {
-                        res.push(new OptimizeCSSAssetsPlugin({}));
-                    }
-                    if (res.length < 1) {
-                        return false;
-                    }
-                    return res;
-                })(),
-                splitChunks: {
-                    chunks: 'async',
-                    minSize: 30000,
-                    minChunks: 1,
-                    maxAsyncRequests: 5,
-                    maxInitialRequests: 3,
-                    automaticNameDelimiter: '_',
-                    name: true,
-                    cacheGroups: {
+                    
+                    let cg = {
+                        // 所有libs的模块打包
+                        libs: {
+                            test: libsReg,
+                            name: "libs",
+                            chunks: "initial",
+                            priority: -20
+                        },
                         // 入口引入超过2次的代码
-                        commons: (function () {
-                            if (userConf.commons) {
-                                return {
-                                    test: /\.js/,
-                                    name: "commons",
-                                    chunks: "initial",
-                                    minChunks: 2,
-                                    reuseExistingChunk: true,
-                                    priority: -10
-                                }
-                            }
-                            return false;
-                        })(),
+                        commons: {
+                            test: /\.js/,
+                            name: "commons",
+                            chunks: "initial",
+                            minChunks: 2,
+                            reuseExistingChunk: true,
+                            priority: -10
+                        },
                         // 所有node_modules的模块打包
-                        vendors: (function () {
-                            if (userConf.vendors) {
-                                return {
-                                    test: /[\\/]node_modules[\\/]/,
-                                    name: "vendors",
-                                    chunks: "initial",
-                                    priority: -20
-                                }
-                            }
-                            return false;
-                        })(),
-                        
+                        vendors: {
+                            test: /[\\/]node_modules[\\/]/,
+                            name: "vendors",
+                            chunks: "initial",
+                            priority: -20
+                        }
                     }
-                }
+                    
+                    let res = {};
+                    res[userConf.cacheGroups] = cg[userConf.cacheGroups];
+                    return res;
+                })()
             }
-        })(),
+        },
         plugins: [
             new ManifestPlugin({
                 writeToFileEmit: true,

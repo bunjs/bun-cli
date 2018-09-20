@@ -149,59 +149,56 @@ module.exports = (userConf) => {
 
             ].concat(rules)
         },
-        optimization: (function () {
-            if (userConf.libs && userConf.libs.length > 0) {
-                return {
-                    minimize: false, //生成模式默认开启
-                    splitChunks: {
-                        cacheGroups: {
-                            default: false
+        optimization: {
+            minimize: false, //生成模式默认开启
+            splitChunks: {
+                chunks: 'async',// 标识打包块的范围：initial(初始块)、async(按需加载块)、all(全部块)，默认为all
+                minSize: 30000, // 压缩前最小模块大小
+                minChunks: 1,// 引入次数最少1次
+                maxAsyncRequests: 5,// 按需加载时并行请求的最大数量
+                maxInitialRequests: 3,// 最大的初始化加载次数
+                automaticNameDelimiter: '_',
+                name: true,
+                cacheGroups: (function () {
+                    let libsReg = '';
+                    if (userConf.libs && userConf.libs.length > 0) {
+                        libsReg = new RegExp('[\\/]node_modules[\\/](' + userConf.libs.join('|') + ')', 'ig');
+                    } else {
+                        libsReg = new RegExp('[\\/]node_modules[\\/]', 'ig');
+                    }
+                    
+                    let cg = {
+                        // 所有libs的模块打包
+                        libs: {
+                            test: libsReg,
+                            name: "libs",
+                            chunks: "initial",
+                            priority: -20
+                        },
+                        // 入口引入超过2次的代码
+                        commons: {
+                            test: /\.js/,
+                            name: "commons",
+                            chunks: "initial",
+                            minChunks: 2,
+                            reuseExistingChunk: true,// 如果满足条件的块已经存在就使用已有的，不再创建一个新的块
+                            priority: -10// 表示缓存的优先级
+                        },
+                        // 所有node_modules的模块打包
+                        vendors: {
+                            test: /[\\/]node_modules[\\/]/,
+                            name: "vendors",
+                            chunks: "initial",
+                            priority: -20
                         }
                     }
-                }
+                    
+                    let res = {};
+                    res[userConf.cacheGroups] = cg[userConf.cacheGroups];
+                    return res;
+                })()
             }
-
-            return {
-                minimize: false, //生成模式默认开启
-                splitChunks: {
-                    chunks: 'async',
-                    minSize: 30000,
-                    minChunks: 1,
-                    maxAsyncRequests: 5,
-                    maxInitialRequests: 3,
-                    automaticNameDelimiter: '_',
-                    name: true,
-                    cacheGroups: {
-                        // 入口引入超过2次的代码
-                        commons: (function () {
-                            if (userConf.commons) {
-                                return {
-                                    test: /\.js/,
-                                    name: "commons",
-                                    chunks: "initial",
-                                    minChunks: 2,
-                                    reuseExistingChunk: true,
-                                    priority: -10
-                                }
-                            }
-                            return false;
-                        })(),
-                        // 所有node_modules的模块打包
-                        vendors: (function () {
-                            if (userConf.vendors) {
-                                return {
-                                    test: /[\\/]node_modules[\\/]/,
-                                    name: "vendors",
-                                    chunks: "initial",
-                                    priority: -20
-                                }
-                            }
-                            return false;
-                        })(),
-                    }
-                }
-            }
-        })(),
+        },
         plugins: [
             // new BundleAnalyzerPlugin(),
             new ManifestPlugin({

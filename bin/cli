@@ -29,11 +29,11 @@ program
                 let appName = yield prompt('App name: ')
                 // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunapp'
                 let cmdStr = `cd ${appName} `
-                    + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/show/Home.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
+                    + `&& rm -rf .git && sed -i 's/$_appname/${appName}/g' config.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' package.json ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/action/api/Api.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/action/show/Home.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/controller/Main.js`
 
                 console.log(chalk.white('\n Start generating...'))
                 download('bunjs/bun-app', './' + appName, function (err) {
@@ -56,7 +56,7 @@ program
             } else if (option == 'project') {
                 let projectName = yield prompt('Project name: ')
                 // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
-                let cmdStr = `cd ${projectName} && rm -rf .git && sed -i '' 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i '' 's/$_projectname/${projectName}/g' package.json`
+                let cmdStr = `cd ${projectName} && rm -rf .git && sed -i 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i 's/$_projectname/${projectName}/g' package.json`
 
                 console.log(chalk.white('\n Start generating...'))
                 download('bunjs/bun-project', './' + projectName, function (err) {
@@ -79,17 +79,17 @@ program
                 let appName = yield prompt('App name: ')
                 // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
                 let cmdStr = `cd ${appName} `
-                    + `&& rm -rf .git && sed -i '' 's/$_appname/${appName}/g' config.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' package.json ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/page/home/home.jsx ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/page/pageone/pageone.jsx ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' src/app/example/index.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/api/Api.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/action/show/Example.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/controller/Main.js`
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/DataStation.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleHomeShow.js ` 
-                    + `&& sed -i '' 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
+                    + `&& rm -rf .git && sed -i 's/$_appname/${appName}/g' config.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' package.json ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/page/home/home.jsx ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/page/pageone/pageone.jsx ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/index.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/action/api/Api.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/action/show/Example.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/controller/Main.js`
+                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/DataStation.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/page/ExampleHomeShow.js ` 
+                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
 
                 console.log(chalk.white('\n Start generating...'))
                 download('bunjs/bun-ssrapp', './' + appName, function (err) {

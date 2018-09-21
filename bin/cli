@@ -2,7 +2,7 @@
 
 // require('shelljs/global');
 // var argv = require('yargs').argv;
-const exec = require('child_process').exec;
+// const exec = require('child_process').exec;
 const pm2 = require('pm2');
 // const fis = require('fis3');
 // var shell = require("shelljs");
@@ -13,10 +13,20 @@ const chalk = require('chalk')
 const chokidar = require('chokidar');
 const webpack = require("webpack");
 const download = require("download-git-repo");
-
+const fs = require('fs');
+const rm = require('rimraf');
 // var argv = require('minimist')(process.argv.slice(2));
 // var path = require('path');
 
+//检测文件或者文件夹存在 nodeJS
+function fsExistsSync(path) {
+    try{
+        fs.accessSync(path,fs.F_OK);
+    }catch(e){
+        return false;
+    }
+    return true;
+}
 program
     .version('1.0.0')
 
@@ -26,70 +36,96 @@ program
     .action((option) => {
         co(function*() {
             if (option == 'app') {
-                let appName = yield prompt('App name: ')
-                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunapp'
-                let cmdStr = `cd ${appName} `
-                    + `&& rm -rf .git && sed -i 's/$_appname/${appName}/g' config.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' package.json ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/action/api/Api.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/action/show/Home.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/controller/Main.js`
+                let appName = yield prompt('App name: ');
+                let fileMap = [
+                    `${appName}/config.js`,
+                    `${appName}/package.json`,
+                    `${appName}/server/action/api/Api.js`,
+                    `${appName}/server/action/show/Home.js`,
+                    `${appName}/server/controller/Main.js`
+                ];
 
-                console.log(chalk.white('\n Start generating...'))
+                console.log(chalk.white('\n Start generating...'));
                 download('bunjs/bun-app', './' + appName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()
                     }
-                    exec(cmdStr, (error, stdout, stderr) => {
-                        if (error) {
-                            console.log(stdout)
-                            console.log(error)
+                    console.log(chalk.white('\n download file completed!'));
+                    rm(appName + '/.git', err => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log(chalk.white('\n remove file completed!'));
+                        try {
+                            for (let i = 0; i < fileMap.length; i++) {
+                                if (fsExistsSync(fileMap[i])) {
+                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
+                                    text = text.replace(/\$_appname/g, appName);
+                                    fs.writeFileSync(fileMap[i], text);
+                                }
+                            }
+                            console.log(chalk.white('\n replace file completed!'));
+                            console.log(chalk.green('\n √ Generation completed!'))
+                            console.log(`\n cd ${appName} && npm install \n`)
+                            process.exit()
+                        } catch (e) {
+                            console.log(e)
                             process.exit()
                         }
-                        console.log(chalk.green('\n √ Generation completed!'))
-                        console.log(`\n cd ${appName} && npm install \n`)
-                        process.exit()
-                    })
+                    });
                 })
                 
             } else if (option == 'project') {
-                let projectName = yield prompt('Project name: ')
-                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
-                let cmdStr = `cd ${projectName} && rm -rf .git && sed -i 's/$_projectname/${projectName}/g' ecosystem.config.js && sed -i 's/$_projectname/${projectName}/g' package.json`
-
+                let projectName = yield prompt('Project name: ');
+                let fileMap = [
+                    `${projectName}/ecosystem.config.js`,
+                    `${projectName}/package.json`
+                ];
                 console.log(chalk.white('\n Start generating...'))
                 download('bunjs/bun-project', './' + projectName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()
                     }
-                    exec(cmdStr, (error, stdout, stderr) => {
-                        if (error) {
-                            console.log(stdout)
-                            console.log(error)
+                    rm(projectName + '/.git', err => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log(chalk.white('\n remove file completed!'));
+                        try {
+                            for (let i = 0; i < fileMap.length; i++) {
+                                if (fsExistsSync(fileMap[i])) {
+                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
+                                    text = text.replace(/\$_projectname/g, projectName);
+                                    fs.writeFileSync(fileMap[i], text);
+                                }
+                            }
+                            console.log(chalk.white('\n replace file completed!'));
+                            console.log(chalk.green('\n √ Generation completed!'))
+                            console.log(`\n cd ${projectName} && npm install \n`)
+                            process.exit()
+                        } catch (e) {
+                            console.log(e)
                             process.exit()
                         }
-                        console.log(chalk.green('\n √ Generation completed!'))
-                        console.log(`\n cd ${projectName} && npm install \n`)
-                        process.exit()
-                    })
+                    });
                 })
             } else if (option == 'ssrapp') {
                 let appName = yield prompt('App name: ')
-                // let gitUrl = 'ssh://liguohui01@icode.baidu.com:8235/baidu/cs-fe/bunko'
-                let cmdStr = `cd ${appName} `
-                    + `&& rm -rf .git && sed -i 's/$_appname/${appName}/g' config.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' package.json ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/page/home/home.jsx ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/page/pageone/pageone.jsx ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' src/app/example/index.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/action/api/Api.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/action/show/Example.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/controller/Main.js`
-                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/DataStation.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/page/ExampleHomeShow.js ` 
-                    + `&& sed -i 's/$_appname/${appName}/g' server/model/services/page/ExampleOneShow.js ` 
+                let fileMap = [
+                    `${appName}/config.js`,
+                    `${appName}/package.json`,
+                    `${appName}/src/app/example/page/home/home.jsx`,
+                    `${appName}/src/app/example/page/pageone/pageone.jsx`,
+                    `${appName}/src/app/example/index.js`,
+                    `${appName}/server/action/show/Example.js`,
+                    `${appName}/server/action/api/Api.js`,
+                    `${appName}/server/controller/Main.js`,
+                    `${appName}/server/model/services/DataStation.js`,
+                    `${appName}/server/model/services/page/ExampleHomeShow.js`,
+                    `${appName}/server/model/services/page/ExampleOneShow.js`
+                ];
 
                 console.log(chalk.white('\n Start generating...'))
                 download('bunjs/bun-ssrapp', './' + appName, function (err) {
@@ -97,16 +133,28 @@ program
                         console.log(err)
                         process.exit()
                     }
-                    exec(cmdStr, (error, stdout, stderr) => {
-                        if (error) {
-                            console.log(stdout)
-                            console.log(error)
+                    rm(appName + '/.git', err => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log(chalk.white('\n remove file completed!'));
+                        try {
+                            for (let i = 0; i < fileMap.length; i++) {
+                                if (fsExistsSync(fileMap[i])) {
+                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
+                                    text = text.replace(/\$_appname/g, appName);
+                                    fs.writeFileSync(fileMap[i], text);
+                                }
+                            }
+                            console.log(chalk.white('\n replace file completed!'));
+                            console.log(chalk.green('\n √ Generation completed!'))
+                            console.log(`\n cd ${appName} && npm install \n`)
+                            process.exit()
+                        } catch (e) {
+                            console.log(e)
                             process.exit()
                         }
-                        console.log(chalk.green('\n √ Generation completed!'))
-                        console.log(`\n cd ${appName} && npm install \n`)
-                        process.exit()
-                    })
+                    });
                 })
             }
 
@@ -202,16 +250,23 @@ program
                     console.log(stats)
                     process.exit()
                 }
-                let cmdStr = `cp -r ./build/server/* ${path}/app`
-                        + `&& cp -r ./build/conf/* ${path}/conf `
-                        + `&& cp -r ./build/static/* ${path}/static `
-                        + `&& cp -r ./build/template/* ${path}/template`
-                        + `&& cp -r ./build/src/* ${path}/src`
-                        + `&& rm -rf ./build`
-                exec(cmdStr, (error, stdout, stderr) => {
-                    if (error) {
-                        console.log(error)
-                        process.exit()
+                let files = fs.readdirSync('./build/server/');
+                let appName = files[0];
+                let fileMap = {
+                    './build/server/': `${path}/app/`,
+                    './build/conf/': `${path}/conf/`,
+                    './build/static/': `${path}/static/`,
+                    './build/template/': `${path}/template/`,
+                    './build/src/': `${path}/src/`
+                }
+                try {
+                    for (let i in fileMap) {
+                        if (fsExistsSync(i + appName)) {
+                            if (!fsExistsSync(fileMap[i])) {
+                                fs.mkdirSync(fileMap[i]);
+                                fs.renameSync(i + appName, fileMap[i] + appName);
+                            }
+                        }
                     }
                     console.log(chalk.green('\n √ Deploy completed!'))
                     if (options.watch) {
@@ -227,13 +282,14 @@ program
                                         console.log(err)
                                         process.exit()
                                     }
-                                    exec(cmdStr, (error, stdout, stderr) => {
-                                        if (error) {
-                                            console.log(error)
-                                            process.exit()
+                                    for (let i in fileMap) {
+                                        if (fsExistsSync(i + appName)) {
+                                            if (!fsExistsSync(fileMap[i])) {
+                                                fs.mkdirSync(fileMap[i]);
+                                                fs.renameSync(i + appName, fileMap[i] + appName);
+                                            }
                                         }
-                                        console.log(chalk.green('\n √ Deploy completed!'))
-                                    });
+                                    }
                                     
                                 });
                                 
@@ -243,7 +299,10 @@ program
                         
                         process.exit()
                     }
-                })
+                } catch (e) {
+                    console.log(e)
+                    process.exit()
+                }
                 
             });
         })

@@ -4,6 +4,7 @@
 // var argv = require('yargs').argv;
 // const exec = require('child_process').exec;
 const pm2 = require('pm2');
+const child_process = require('child_process');
 // const fis = require('fis3');
 // var shell = require("shelljs");
 const program = require('commander')
@@ -259,46 +260,81 @@ program
                     './build/template/': `${path}/template/`,
                     './build/src/': `${path}/src/`
                 }
+                function _copy(src, dist) {
+
+                    let paths = fs.readdirSync(src);
+                     
+                    paths.forEach(function(path) {
+                        var _src = src + '/' +path;
+                        var _dist = dist + '/' +path;
+                        let stat = fs.lstatSync(_src);
+                        if (stat.isDirectory()) {
+                            // 当是目录是，递归复制
+                            copyDir(_src, _dist)
+                        } else {
+                            fs.writeFileSync(_dist, fs.readFileSync(_src));
+                        }
+                    })
+                }
+                
+                function copyDir(src, dist) {
+                    if (!fsExistsSync(dist)) {
+                        fs.mkdirSync(dist);
+                    }
+                    _copy(src, dist);
+                }
                 try {
                     for (let i in fileMap) {
                         if (fsExistsSync(i + appName)) {
                             if (!fsExistsSync(fileMap[i])) {
                                 fs.mkdirSync(fileMap[i]);
-                                fs.renameSync(i + appName, fileMap[i] + appName);
+                                copyDir(i + appName, fileMap[i] + appName);
+                                // child_process.spawn('cp', ['-r', i + appName, fileMap[i]]);
+                                // fs.renameSync(i + appName, fileMap[i] + appName);
+                            } else {
+                                copyDir(i + appName, fileMap[i] + appName);
+                                // child_process.spawn('cp', ['-r', i + appName, fileMap[i]]);
+                                // fs.renameSync(i + appName, fileMap[i] + appName);
                             }
                         }
                     }
-                    console.log(chalk.green('\n √ Deploy completed!'))
-                    if (options.watch) {
-                        // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
-                        const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
-                        // watcher.on('ready', () => {
-                            
-                            watcher.on('change', (path, stats) => {
-                                if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
-                                webpack(webpackConfig, (err, stats) => {
-                                    if (err || stats.hasErrors()) {
-                                        // 在这里处理错误
-                                        console.log(err)
-                                        process.exit()
-                                    }
-                                    for (let i in fileMap) {
-                                        if (fsExistsSync(i + appName)) {
-                                            if (!fsExistsSync(fileMap[i])) {
-                                                fs.mkdirSync(fileMap[i]);
-                                                fs.renameSync(i + appName, fileMap[i] + appName);
+                    rm('./build', err => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log(chalk.white('\n remove build completed!'));
+                        console.log(chalk.green('\n √ Deploy completed!'))
+                        if (options.watch) {
+                            // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
+                            const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
+                            // watcher.on('ready', () => {
+                                
+                                watcher.on('change', (path, stats) => {
+                                    if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
+                                    webpack(webpackConfig, (err, stats) => {
+                                        if (err || stats.hasErrors()) {
+                                            // 在这里处理错误
+                                            console.log(err)
+                                            process.exit()
+                                        }
+                                        for (let i in fileMap) {
+                                            if (fsExistsSync(i + appName)) {
+                                                if (!fsExistsSync(fileMap[i])) {
+                                                    fs.mkdirSync(fileMap[i]);
+                                                    fs.renameSync(i + appName, fileMap[i] + appName);
+                                                }
                                             }
                                         }
-                                    }
+                                        
+                                    });
                                     
                                 });
-                                
-                            });
-                        // });
-                    } else {
-                        
-                        process.exit()
-                    }
+                            // });
+                        } else {
+                            process.exit()
+                        }
+                    });
+                    
                 } catch (e) {
                     console.log(e)
                     process.exit()

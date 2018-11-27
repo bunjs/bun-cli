@@ -129,7 +129,49 @@ program
                 ];
 
                 console.log(chalk.white('\n Start generating...'))
-                download('bunjs/bun-ssrapp', './' + appName, function (err) {
+                download('bunjs/bun-reactapp', './' + appName, function (err) {
+                    if (err) {
+                        console.log(err)
+                        process.exit()
+                    }
+                    rm(appName + '/.git', err => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log(chalk.white('\n remove file completed!'));
+                        try {
+                            for (let i = 0; i < fileMap.length; i++) {
+                                if (fsExistsSync(fileMap[i])) {
+                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
+                                    text = text.replace(/\$_appname/g, appName);
+                                    fs.writeFileSync(fileMap[i], text);
+                                }
+                            }
+                            console.log(chalk.white('\n replace file completed!'));
+                            console.log(chalk.green('\n √ Generation completed!'))
+                            console.log(`\n cd ${appName} && npm install \n`)
+                            process.exit()
+                        } catch (e) {
+                            console.log(e)
+                            process.exit()
+                        }
+                    });
+                })
+            } else if (option == 'vueapp') {
+                let appName = yield prompt('App name: ')
+                let fileMap = [
+                    `${appName}/config.js`,
+                    `${appName}/package.json`,
+                    `${appName}/server/action/show/Example.js`,
+                    `${appName}/server/action/api/Api.js`,
+                    `${appName}/server/controller/Main.js`,
+                    `${appName}/server/model/services/DataStation.js`,
+                    `${appName}/server/model/services/page/ExampleHomeShow.js`,
+                    `${appName}/server/model/services/page/ExampleOneShow.js`
+                ];
+
+                console.log(chalk.white('\n Start generating...'))
+                download('bunjs/bun-vueapp', './' + appName, function (err) {
                     if (err) {
                         console.log(err)
                         process.exit()

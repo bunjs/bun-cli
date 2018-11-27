@@ -46,9 +46,42 @@ bun r -t ../myProject
 cd myProject
 bun run myProject
 ```
-
-工具内置了pm2作为进程保护，可以监听文件修改自动重新启动
-
 默认端口是8000，打开http://localhost:8000/myapp/home 即可看到示例页面
 
+工具内置了pm2作为进程保护，可以监听文件修改自动重新启动，你可以执行：
+
+```
+bun restart myProject //重启项目
+bun stop myProject //停止项目
+bun run myProject -w //自动重启项目
+```
+我们对react和vue等热门前端框架进行了支持，
+如果你想使用vue，你可以这样创建app：
+
+```
+bun init vueapp
+```
+如之前一样部署完成后，
+
+如果你想使用react，你可以这样创建app：
+
+```
+bun init reactapp
+```
+打开http://localhost:8000/myapp/example 即可看到示例页面
+
+我们还对react做了ssr支持，并抽象为一个插件，你可以很方便在project目录下安装插件：
+
+```
+npm i --save bun-reactssr-plugin
+```
+然后在conf/plugins.js中做好声明即可使用：
+
+```
+exports.ral = {
+  enable: true,
+  package: 'bun-reactssr-plugin'
+};
+```
+插件的具体使用方法请移步这里：https://github.com/bunjs/bun-reactssr-plugin
 

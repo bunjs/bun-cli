@@ -91,6 +91,7 @@ module.exports = (userConf) => {
         },
         resolve:{
             alias:{
+                'vue$': 'vue/dist/vue.esm.js',
                 Src: path.resolve(userConf.dirname, '/src/')
             }
         },

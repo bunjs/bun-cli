@@ -1,6 +1,6 @@
 {
   "name": "bunjs",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "",
   "bin": {
     "bun": "bin/cli"
@@ -24,7 +24,7 @@
     "pm2": "^2.7.1",
     "rimraf": "^2.6.2",
     "uglifyjs-webpack-plugin": "^1.2.4",
-    "webpack": "^4.5.0",
+    "webpack": "^4.26.1",
     "webpack-bundle-size-analyzer": "^2.7.0",
     "webpack-manifest-plugin": "^2.0.0"
   }

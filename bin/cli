@@ -4,7 +4,7 @@
 // var argv = require('yargs').argv;
 // const exec = require('child_process').exec;
 const pm2 = require('pm2');
-const child_process = require('child_process');
+// const child_process = require('child_process');
 // const fis = require('fis3');
 // var shell = require("shelljs");
 const program = require('commander')
@@ -112,7 +112,7 @@ program
                         }
                     });
                 })
-            } else if (option == 'ssrapp') {
+            } else if (option == 'reactapp') {
                 let appName = yield prompt('App name: ')
                 let fileMap = [
                     `${appName}/config.js`,
@@ -189,6 +189,31 @@ program
                         process.exit()
                     }
                     console.log(chalk.green('\n √ Starting completed!'))
+                    process.exit()
+                    
+                });
+            });
+        })
+    })
+program
+    .command('restart <app>')
+    .description('restart the bun')
+    .action((app) => {
+        co(function*() {
+
+            pm2.connect(function(err) {
+                if (err) {
+                    console.error(err);
+                    process.exit(2);
+                }
+
+                pm2.restart(app, function(err, apps) {
+                    pm2.disconnect(); // Disconnects from PM2
+                    if (err) {
+                        throw err;
+                        process.exit()
+                    }
+                    console.log(chalk.green('\n √ Restart completed!'))
                     process.exit()
                     
                 });
@@ -289,12 +314,8 @@ program
                             if (!fsExistsSync(fileMap[i])) {
                                 fs.mkdirSync(fileMap[i]);
                                 copyDir(i + appName, fileMap[i] + appName);
-                                // child_process.spawn('cp', ['-r', i + appName, fileMap[i]]);
-                                // fs.renameSync(i + appName, fileMap[i] + appName);
                             } else {
                                 copyDir(i + appName, fileMap[i] + appName);
-                                // child_process.spawn('cp', ['-r', i + appName, fileMap[i]]);
-                                // fs.renameSync(i + appName, fileMap[i] + appName);
                             }
                         }
                     }
@@ -321,11 +342,13 @@ program
                                             if (fsExistsSync(i + appName)) {
                                                 if (!fsExistsSync(fileMap[i])) {
                                                     fs.mkdirSync(fileMap[i]);
-                                                    fs.renameSync(i + appName, fileMap[i] + appName);
+                                                    copyDir(i + appName, fileMap[i] + appName);
+                                                } else {
+                                                    copyDir(i + appName, fileMap[i] + appName);
                                                 }
                                             }
                                         }
-                                        
+                                        console.log(chalk.green('\n √ Deploy completed!'))
                                     });
                                     
                                 });

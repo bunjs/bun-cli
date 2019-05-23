@@ -1,12 +1,6 @@
 #!/usr/bin/env node
 
-// require('shelljs/global');
-// var argv = require('yargs').argv;
-// const exec = require('child_process').exec;
 const pm2 = require('pm2');
-// const child_process = require('child_process');
-// const fis = require('fis3');
-// var shell = require("shelljs");
 const program = require('commander')
 const prompt = require('co-prompt')
 const co = require('co')
@@ -16,8 +10,7 @@ const webpack = require("webpack");
 const download = require("download-git-repo");
 const fs = require('fs');
 const rm = require('rimraf');
-// var argv = require('minimist')(process.argv.slice(2));
-// var path = require('path');
+const config = require('./config');
 
 //检测文件或者文件夹存在 nodeJS
 function fsExistsSync(path) {
@@ -28,186 +21,114 @@ function fsExistsSync(path) {
     }
     return true;
 }
-program
-    .version('1.0.0')
+function initFiles(downLoadPath, appName, fileMap) {
+    console.log(chalk.white('\n Start generating...'));
+    download(downLoadPath, './' + appName, function (err) {
+        if (err) {
+            console.log(err)
+            process.exit()
+        }
+        console.log(chalk.white('\n download file completed!'));
+        rm(appName + '/.git', err => {
+            if (err) {
+                throw err;
+            }
+            console.log(chalk.white('\n remove file completed!'));
+            try {
+                for (let i = 0; i < fileMap.length; i++) {
+                    if (fsExistsSync(fileMap[i])) {
+                        let text = fs.readFileSync(fileMap[i], 'utf-8');
+                        text = text.replace(/\$_appname/g, appName);
+                        fs.writeFileSync(fileMap[i], text);
+                    }
+                }
+                console.log(chalk.white('\n replace file completed!'));
+                console.log(chalk.green('\n √ Generation completed!'))
+                console.log(`\n cd ${appName} && npm install \n`)
+                process.exit()
+            } catch (e) {
+                console.log(e)
+                process.exit()
+            }
+        });
+    })
+}
+function restartApp(app, cb) {
+    pm2.connect(function(err) {
+        if (err) {
+            console.error(err);
+            process.exit(2);
+        }
 
+        pm2.restart(app, function(err, apps) {
+            pm2.disconnect(); // Disconnects from PM2
+            if (err) {
+                throw err;
+                process.exit()
+            }
+            console.log(chalk.green('\n √ Restart completed!'));
+            if (cb && typeof cb === 'function') {
+                cb();
+            }
+            process.exit();
+            
+        });
+    });
+}
+
+function copyDir(src, dist) {
+    if (!fsExistsSync(dist)) {
+        fs.mkdirSync(dist);
+    }
+    let paths = fs.readdirSync(src);
+     
+    paths.forEach(function(path) {
+        var _src = src + '/' +path;
+        var _dist = dist + '/' +path;
+        let stat = fs.lstatSync(_src);
+        if (stat.isDirectory()) {
+            // 当是目录，递归复制
+            copyDir(_src, _dist)
+        } else {
+            fs.writeFileSync(_dist, fs.readFileSync(_src));
+        }
+    })
+}
+
+function moveAppToPro(appName, fileMap) {
+    for (let i in fileMap) {
+        if (fsExistsSync(i + appName)) {
+            if (!fsExistsSync(fileMap[i])) {
+                fs.mkdirSync(fileMap[i]);
+                copyDir(i + appName, fileMap[i] + appName);
+            } else {
+                copyDir(i + appName, fileMap[i] + appName);
+            }
+        }
+    }
+    rm.sync('./build');
+    console.log(chalk.white('\n √ Remove build completed!'));
+    console.log(chalk.green('\n √ Deploy completed!'));
+}
+
+program
+    .version('1.3.0')
 program
     .command('init <option>')
     .description('Generate a new app')
     .action((option) => {
         co(function*() {
-            if (option == 'app') {
-                let appName = yield prompt('App name: ');
-                let fileMap = [
-                    `${appName}/config.js`,
-                    `${appName}/package.json`,
-                    `${appName}/server/action/api/Api.js`,
-                    `${appName}/server/action/show/Home.js`,
-                    `${appName}/server/controller/Main.js`
-                ];
-
-                console.log(chalk.white('\n Start generating...'));
-                download('bunjs/bun-app', './' + appName, function (err) {
-                    if (err) {
-                        console.log(err)
-                        process.exit()
-                    }
-                    console.log(chalk.white('\n download file completed!'));
-                    rm(appName + '/.git', err => {
-                        if (err) {
-                            throw err;
-                        }
-                        console.log(chalk.white('\n remove file completed!'));
-                        try {
-                            for (let i = 0; i < fileMap.length; i++) {
-                                if (fsExistsSync(fileMap[i])) {
-                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
-                                    text = text.replace(/\$_appname/g, appName);
-                                    fs.writeFileSync(fileMap[i], text);
-                                }
-                            }
-                            console.log(chalk.white('\n replace file completed!'));
-                            console.log(chalk.green('\n √ Generation completed!'))
-                            console.log(`\n cd ${appName} && npm install \n`)
-                            process.exit()
-                        } catch (e) {
-                            console.log(e)
-                            process.exit()
-                        }
-                    });
-                })
-                
-            } else if (option == 'project') {
-                let projectName = yield prompt('Project name: ');
-                let fileMap = [
-                    `${projectName}/ecosystem.config.js`,
-                    `${projectName}/package.json`
-                ];
-                console.log(chalk.white('\n Start generating...'))
-                download('bunjs/bun-project', './' + projectName, function (err) {
-                    if (err) {
-                        console.log(err)
-                        process.exit()
-                    }
-                    rm(projectName + '/.git', err => {
-                        if (err) {
-                            throw err;
-                        }
-                        console.log(chalk.white('\n remove file completed!'));
-                        try {
-                            for (let i = 0; i < fileMap.length; i++) {
-                                if (fsExistsSync(fileMap[i])) {
-                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
-                                    text = text.replace(/\$_projectname/g, projectName);
-                                    fs.writeFileSync(fileMap[i], text);
-                                }
-                            }
-                            console.log(chalk.white('\n replace file completed!'));
-                            console.log(chalk.green('\n √ Generation completed!'))
-                            console.log(`\n cd ${projectName} && npm install \n`)
-                            process.exit()
-                        } catch (e) {
-                            console.log(e)
-                            process.exit()
-                        }
-                    });
-                })
-            } else if (option == 'reactapp') {
-                let appName = yield prompt('App name: ')
-                let fileMap = [
-                    `${appName}/config.js`,
-                    `${appName}/package.json`,
-                    `${appName}/src/app/example/page/home/home.jsx`,
-                    `${appName}/src/app/example/page/pageone/pageone.jsx`,
-                    `${appName}/src/app/example/index.js`,
-                    `${appName}/server/action/show/Example.js`,
-                    `${appName}/server/action/api/Api.js`,
-                    `${appName}/server/controller/Main.js`,
-                    `${appName}/server/model/services/DataStation.js`,
-                    `${appName}/server/model/services/page/ExampleHomeShow.js`,
-                    `${appName}/server/model/services/page/ExampleOneShow.js`
-                ];
-
-                console.log(chalk.white('\n Start generating...'))
-                download('bunjs/bun-reactapp', './' + appName, function (err) {
-                    if (err) {
-                        console.log(err)
-                        process.exit()
-                    }
-                    rm(appName + '/.git', err => {
-                        if (err) {
-                            throw err;
-                        }
-                        console.log(chalk.white('\n remove file completed!'));
-                        try {
-                            for (let i = 0; i < fileMap.length; i++) {
-                                if (fsExistsSync(fileMap[i])) {
-                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
-                                    text = text.replace(/\$_appname/g, appName);
-                                    fs.writeFileSync(fileMap[i], text);
-                                }
-                            }
-                            console.log(chalk.white('\n replace file completed!'));
-                            console.log(chalk.green('\n √ Generation completed!'))
-                            console.log(`\n cd ${appName} && npm install \n`)
-                            process.exit()
-                        } catch (e) {
-                            console.log(e)
-                            process.exit()
-                        }
-                    });
-                })
-            } else if (option == 'vueapp') {
-                let appName = yield prompt('App name: ')
-                let fileMap = [
-                    `${appName}/config.js`,
-                    `${appName}/package.json`,
-                    `${appName}/server/action/show/Example.js`,
-                    `${appName}/server/action/api/Api.js`,
-                    `${appName}/server/controller/Main.js`,
-                    `${appName}/server/model/services/DataStation.js`,
-                    `${appName}/server/model/services/page/ExampleHomeShow.js`,
-                    `${appName}/server/model/services/page/ExampleOneShow.js`
-                ];
-
-                console.log(chalk.white('\n Start generating...'))
-                download('bunjs/bun-vueapp', './' + appName, function (err) {
-                    if (err) {
-                        console.log(err)
-                        process.exit()
-                    }
-                    rm(appName + '/.git', err => {
-                        if (err) {
-                            throw err;
-                        }
-                        console.log(chalk.white('\n remove file completed!'));
-                        try {
-                            for (let i = 0; i < fileMap.length; i++) {
-                                if (fsExistsSync(fileMap[i])) {
-                                    let text = fs.readFileSync(fileMap[i], 'utf-8');
-                                    text = text.replace(/\$_appname/g, appName);
-                                    fs.writeFileSync(fileMap[i], text);
-                                }
-                            }
-                            console.log(chalk.white('\n replace file completed!'));
-                            console.log(chalk.green('\n √ Generation completed!'))
-                            console.log(`\n cd ${appName} && npm install \n`)
-                            process.exit()
-                        } catch (e) {
-                            console.log(e)
-                            process.exit()
-                        }
-                    });
-                })
-            }
-
-        })
-    })
+            let appName = yield prompt(option + ' name: ');
+            let fileMap = config[option].fileMap;
+            let downloadPath = config[option].downloadPath;
+            initFiles(downloadPath, appName, fileMap);
+        });
+    });
 
 program
-    .command('run <app>')
+    .command('run')
     .description('start the bun')
-    .action((app) => {
+    .action(() => {
         co(function*() {
             console.log(chalk.white('\n Starting bunko...'))
             pm2.connect(function(err) {
@@ -216,15 +137,7 @@ program
                     process.exit(2);
                 }
 
-                pm2.start({
-                    name: app,
-                    script: process.cwd() + '/entry.js', // Script to be run
-                    watch: true,
-                    ignore_watch: [process.cwd() + "/logs",process.cwd() + "/node_modules"],
-                    error: process.cwd() + '/logs/bun/bun.log.wf',
-                    output: process.cwd() + '/logs/bun/bun.log',
-                    max_memory_restart: '1000M' // Optional: Restarts your app if it reaches 100Mo
-                }, function(err, apps) {
+                pm2.start(process.cwd() + '/ecosystem.config.js', function(err, apps) {
                     pm2.disconnect(); // Disconnects from PM2
                     if (err) {
                         throw err;
@@ -237,29 +150,13 @@ program
             });
         })
     })
+
 program
     .command('restart <app>')
     .description('restart the bun')
     .action((app) => {
         co(function*() {
-
-            pm2.connect(function(err) {
-                if (err) {
-                    console.error(err);
-                    process.exit(2);
-                }
-
-                pm2.restart(app, function(err, apps) {
-                    pm2.disconnect(); // Disconnects from PM2
-                    if (err) {
-                        throw err;
-                        process.exit()
-                    }
-                    console.log(chalk.green('\n √ Restart completed!'))
-                    process.exit()
-                    
-                });
-            });
+            restartApp(app);
         })
     })
 program
@@ -294,7 +191,6 @@ program
     .option("-d, --dev", "if development")
     .option("-t, --to [path]", "Which project to deploy")
     .option("-w, --watch", "if watching the app")
-    // .option("-dev, --dev", "if development")
     .action((options) => {
         co(function*() {
             let path = options.to
@@ -303,11 +199,9 @@ program
             if (dev) {
                 userConf = require(process.cwd() + '/config.js')
                 webpackConfig = require('./webpack.config-dev.js')(userConf)
-                // webpackConfig = require(process.cwd() + '/webpack.config-dev.js')
             } else {
                 userConf = require(process.cwd() + '/config.js')
                 webpackConfig = require('./webpack.config.js')(userConf)
-                // webpackConfig = require(process.cwd() + '/webpack.config.js')
             }
             
             console.log(chalk.white('\n Start deploying...'))
@@ -318,60 +212,20 @@ program
                     console.log(stats)
                     process.exit()
                 }
-                let files = fs.readdirSync('./build/server/');
-                let appName = files[0];
-                let fileMap = {
-                    './build/server/': `${path}/app/`,
-                    './build/conf/': `${path}/conf/`,
-                    './build/static/': `${path}/static/`,
-                    './build/template/': `${path}/template/`,
-                    './build/src/': `${path}/src/`
-                }
-                function _copy(src, dist) {
-
-                    let paths = fs.readdirSync(src);
-                     
-                    paths.forEach(function(path) {
-                        var _src = src + '/' +path;
-                        var _dist = dist + '/' +path;
-                        let stat = fs.lstatSync(_src);
-                        if (stat.isDirectory()) {
-                            // 当是目录是，递归复制
-                            copyDir(_src, _dist)
-                        } else {
-                            fs.writeFileSync(_dist, fs.readFileSync(_src));
-                        }
-                    })
-                }
+                console.log(chalk.green('\n √ Complier completed!'));
                 
-                function copyDir(src, dist) {
-                    if (!fsExistsSync(dist)) {
-                        fs.mkdirSync(dist);
-                    }
-                    _copy(src, dist);
-                }
                 try {
-                    for (let i in fileMap) {
-                        if (fsExistsSync(i + appName)) {
-                            if (!fsExistsSync(fileMap[i])) {
-                                fs.mkdirSync(fileMap[i]);
-                                copyDir(i + appName, fileMap[i] + appName);
-                            } else {
-                                copyDir(i + appName, fileMap[i] + appName);
-                            }
-                        }
-                    }
-                    rm('./build', err => {
-                        if (err) {
-                            throw err;
-                        }
-                        console.log(chalk.white('\n remove build completed!'));
-                        console.log(chalk.green('\n √ Deploy completed!'))
-                        if (options.watch) {
-                            // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
-                            const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
-                            // watcher.on('ready', () => {
-                                
+                    if (path) {
+                        // 如果设置to参数，则移动build目录下的文件到指定project
+                        let files = fs.readdirSync('./build/server/');
+                        let appName = files[0];
+                        let fileMap = config.deployConf.fileMap(path);
+                        moveAppToPro(appName, fileMap);
+
+                        restartApp(path.replace(/[\.\.\/]*([/s/S]*)\/?/ig, '$1'), () => {
+                            if (options.watch) {
+                                // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
+                                const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
                                 watcher.on('change', (path, stats) => {
                                     if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
                                     webpack(webpackConfig, (err, stats) => {
@@ -380,25 +234,18 @@ program
                                             console.log(err)
                                             process.exit()
                                         }
-                                        for (let i in fileMap) {
-                                            if (fsExistsSync(i + appName)) {
-                                                if (!fsExistsSync(fileMap[i])) {
-                                                    fs.mkdirSync(fileMap[i]);
-                                                    copyDir(i + appName, fileMap[i] + appName);
-                                                } else {
-                                                    copyDir(i + appName, fileMap[i] + appName);
-                                                }
-                                            }
+                                        console.log(chalk.green('\n √ Complier completed!'));
+                                        if (path) {
+                                            // 如果设置to参数，则移动build目录下的文件到指定project
+                                            moveAppToPro(appName, fileMap);
                                         }
-                                        console.log(chalk.green('\n √ Deploy completed!'))
+                                        restartApp(path.replace(/[\.\.]*[\s\S]*\/([^\/]+)\/?/ig, '$1'));
                                     });
                                     
                                 });
-                            // });
-                        } else {
-                            process.exit()
-                        }
-                    });
+                            }
+                        });
+                    }
                     
                 } catch (e) {
                     console.log(e)

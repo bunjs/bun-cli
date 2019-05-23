@@ -33,7 +33,7 @@ function initFiles(downLoadPath, appName, fileMap) {
             if (err) {
                 throw err;
             }
-            console.log(chalk.white('\n remove file completed!'));
+            console.log(chalk.white('\n remove .git completed!'));
             try {
                 for (let i = 0; i < fileMap.length; i++) {
                     if (fsExistsSync(fileMap[i])) {
@@ -119,7 +119,7 @@ program
     .action((option) => {
         co(function*() {
             let appName = yield prompt(option + ' name: ');
-            let fileMap = config[option].fileMap;
+            let fileMap = config[option].fileMap(appName);
             let downloadPath = config[option].downloadPath;
             initFiles(downloadPath, appName, fileMap);
         });

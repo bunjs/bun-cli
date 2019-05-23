@@ -14,11 +14,8 @@ module.exports = {
 		downloadPath: 'bunjs/bun-project',
 		fileMap: (appName) => {
 			return [
-                `${appName}/config.js`,
-                `${appName}/package.json`,
-                `${appName}/server/action/api/Api.js`,
-                `${appName}/server/action/show/Home.js`,
-                `${appName}/server/controller/Main.js`
+                `${appName}/ecosystem.config.js`,	
+                `${appName}/package.json`
             ];
 		}
 	},

@@ -1,7 +1,6 @@
 module.exports = (userConf) => {
     const webpack = require('webpack');
     const CopyWebpackPlugin = require('copy-webpack-plugin');
-    const WebpackBundleSizeAnalyzerPlugin = require('webpack-bundle-size-analyzer').WebpackBundleSizeAnalyzerPlugin;
     const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
     const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
     const MiniCssExtractPlugin = require("mini-css-extract-plugin");
@@ -85,11 +84,6 @@ module.exports = (userConf) => {
     }
     return {
         entry: opts.entries,
-        output: {
-            path: userConf.dirname + `/build/static/${appname}`,
-            filename: "js/[name].min_[chunkhash:8].js",
-            chunkFilename: "js/[name].chunk.min_[chunkhash:8].js"
-        },
         resolve:{
             alias: Object.assign({
                 'vue$': 'vue/dist/vue.esm.js',
@@ -134,19 +128,6 @@ module.exports = (userConf) => {
                         }
                     ]
                 },
-                {
-                    test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf)$/,
-                    use: {
-                        loader: 'url-loader',
-                        options:{
-                            limit: 5*1024,
-                            name:'img/[name].[hash:7].[ext]',
-                            // outputPath: userConf.dirname + `/build/static/${appname}/img`
-                            publicPath: userConf.publicStaticDomain + `/static/${appname}`
-                        }
-                    }
-                }
-
             ].concat(rules)
         },
         optimization: {
@@ -216,10 +197,6 @@ module.exports = (userConf) => {
             }
         },
         plugins: [
-            new ManifestPlugin({
-                writeToFileEmit: true,
-                publicPath: userConf.publicStaticDomain + `/static/${appname}/`
-            }),
             new CopyWebpackPlugin([
                 // 切记放在new HtmlWebpackPlugin之前
                 {

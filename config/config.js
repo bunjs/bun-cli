@@ -1,4 +1,13 @@
 module.exports = {
+	webpackCopyConf: (appname) => {
+		return {
+			'./server': `./build/server/${appname}/`,
+			'./conf': `./build/conf/${appname}/`,
+			'./src/template': `./build/template/${appname}/`,
+			'./src/static': `./build/static/${appname}/`,
+			'./src': `./build/src/${appname}/`
+		}
+	},
 	deployConf: {
 		fileMap: (projectPath) => {
 			return {
@@ -55,6 +64,24 @@ module.exports = {
 			return [
                 `${appName}/config.js`,
                 `${appName}/package.json`,
+                `${appName}/server/action/show/Example.js`,
+                `${appName}/server/action/api/Api.js`,
+                `${appName}/server/controller/Main.js`,
+                `${appName}/server/model/services/DataStation.js`,
+                `${appName}/server/model/services/page/ExampleHomeShow.js`,
+                `${appName}/server/model/services/page/ExampleOneShow.js`
+            ];
+		}
+	},
+	vueappssr: {
+		downloadPath: 'bunjs/bun-vueapp-ssr',
+		fileMap: (appName) => {
+			return [
+                `${appName}/config.js`,
+                `${appName}/package.json`,
+                `${appName}/src/app/base/routes.js`,
+                `${appName}/src/app/page/home/index.vue`,
+                `${appName}/src/app/page/two/index.vue`,
                 `${appName}/server/action/show/Example.js`,
                 `${appName}/server/action/api/Api.js`,
                 `${appName}/server/controller/Main.js`,

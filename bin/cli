@@ -6,11 +6,11 @@ const prompt = require('co-prompt')
 const co = require('co')
 const chalk = require('chalk')
 const chokidar = require('chokidar');
-const webpack = require("webpack");
+const webpack = require("../node_modules/webpack");
 const download = require("download-git-repo");
 const fs = require('fs');
 const rm = require('rimraf');
-const config = require('./config');
+const config = require('../config/config.js');
 
 //检测文件或者文件夹存在 nodeJS
 function fsExistsSync(path) {
@@ -70,8 +70,6 @@ function restartApp(app, cb) {
             if (cb && typeof cb === 'function') {
                 cb();
             }
-            process.exit();
-            
         });
     });
 }
@@ -185,73 +183,134 @@ program
         })
     })
 program
+    .command('rundev')
+    .description('start mock server')
+    .action(() => {
+        co(function*() {
+            let userConf = require(process.cwd() + '/config.js');
+            userConf.hotMiddleware = true;
+            require('../dev-server/server.js')(userConf);
+        })
+    })
+function webpackBuild(webpackConfig) {
+    return new Promise((resolve, reject) => {
+        webpack(webpackConfig, (err, stats) => {
+            // 在这里处理错误
+            if (err) {
+                console.error(err.stack || err);
+                if (err.details) {
+                  console.error(err.details);
+                }
+                process.exit();
+            }
+
+            const info = stats.toJson();
+
+            if (stats.hasErrors()) {
+                console.error(info.errors);
+                process.exit();
+            }
+
+            if (stats.hasWarnings()) {
+                console.warn(info.warnings);
+            }
+            // if (err || stats.hasErrors()) {
+            //     // 在这里处理错误
+            //     console.log(stats)
+            //     process.exit()
+            // }
+            console.log(stats.toString({
+                // 增加控制台颜色开关
+                colors: true
+            }));
+            console.log(chalk.green('\n √ Complier completed!'));
+            resolve(stats);
+        });
+    });
+}
+program
     .command('release')
     .description('deploy the app')
     .alias('r')
     .option("-d, --dev", "if development")
     .option("-t, --to [path]", "Which project to deploy")
     .option("-w, --watch", "if watching the app")
+    .option("-c, --test", "dev=test")
     .action((options) => {
         co(function*() {
-            let path = options.to
-            let dev = options.dev
-            let webpackConfig;
+            let path = options.to;
+            let dev = options.dev;
+            let test = options.test;
+            let ssr = options.ssr;
+            let userConf = require(process.cwd() + '/config.js');
+            let webpackConfig = '';
+            let vueSsrWebpackConfig = '';
             if (dev) {
-                userConf = require(process.cwd() + '/config.js')
-                webpackConfig = require('./webpack.config-dev.js')(userConf)
+                process.env.NODE_ENV === 'development';
+                webpackConfig = require('../config/webpack.config-dev.js')(userConf);
             } else {
-                userConf = require(process.cwd() + '/config.js')
-                webpackConfig = require('./webpack.config.js')(userConf)
-            }
-            
-            console.log(chalk.white('\n Start deploying...'))
-            webpack(webpackConfig, (err, stats) => {
-
-                if (err || stats.hasErrors()) {
-                    // 在这里处理错误
-                    console.log(stats)
-                    process.exit()
+                process.env.NODE_ENV === 'production';
+                if (test) {
+                    userConf.publicStaticDomain = userConf.testStaticDomain;
                 }
-                console.log(chalk.green('\n √ Complier completed!'));
-                
-                try {
-                    if (path) {
-                        // 如果设置to参数，则移动build目录下的文件到指定project
-                        let files = fs.readdirSync('./build/server/');
-                        let appName = files[0];
-                        let fileMap = config.deployConf.fileMap(path);
-                        moveAppToPro(appName, fileMap);
+                webpackConfig = require('../config/webpack.config.js')(userConf);
+            }
+            if (userConf.ssr) {
+                vueSsrWebpackConfig = require('../config/webpack.config-vuessr.js')(userConf);
+            }
+            function moveToProAndWatch() {
+                // 如果设置to参数，则移动build目录下的文件到指定project
+                let files = fs.readdirSync('./build/server/');
+                let appName = files[0];
+                let fileMap = config.deployConf.fileMap(path);
+                moveAppToPro(appName, fileMap);
+                let projectName = path.replace(/[\.\.\/]*([/s/S]*)\/?/ig, '$1');
 
-                        restartApp(path.replace(/[\.\.\/]*([/s/S]*)\/?/ig, '$1'), () => {
-                            if (options.watch) {
-                                // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
-                                const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf', process.cwd() + '/webpack.config.js']);
-                                watcher.on('change', (path, stats) => {
-                                    if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
-                                    webpack(webpackConfig, (err, stats) => {
-                                        if (err || stats.hasErrors()) {
-                                            // 在这里处理错误
-                                            console.log(err)
-                                            process.exit()
-                                        }
-                                        console.log(chalk.green('\n √ Complier completed!'));
+                restartApp(projectName, () => {
+                    if (options.watch) {
+                        // 使用chokidar监控app文件变化，自动部署，仅限线下调试使用
+                        const watcher = chokidar.watch([process.cwd() + '/server', process.cwd() + '/src', process.cwd() + '/conf']);
+                        watcher.on('change', (path, stats) => {
+                            if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
+                            webpackBuild(webpackConfig).then(() => {
+                                if (userConf.ssr) {
+                                    webpackBuild(vueSsrWebpackConfig).then((stats) => {
                                         if (path) {
                                             // 如果设置to参数，则移动build目录下的文件到指定project
                                             moveAppToPro(appName, fileMap);
+                                            restartApp(projectName);
                                         }
-                                        restartApp(path.replace(/[\.\.]*[\s\S]*\/([^\/]+)\/?/ig, '$1'));
                                     });
-                                    
-                                });
+                                } else if (path) {
+                                    moveAppToPro(appName, fileMap);
+                                    restartApp(projectName);
+                                }
+                            });
+                        });
+                    } else {
+                        process.exit();
+                    }
+                });
+            }
+
+            console.log(chalk.white('\n Start deploying...'));
+            webpackBuild(webpackConfig).then((stats) => {
+                try {
+                    if (userConf.ssr) {
+                        webpackBuild(vueSsrWebpackConfig).then((stats) => {
+                            if (path) {
+                                moveToProAndWatch();
                             }
                         });
+                    } else {
+                        if (path) {
+                            moveToProAndWatch();
+                        } 
                     }
-                    
                 } catch (e) {
                     console.log(e)
                     process.exit()
                 }
-                
             });
         })
     })

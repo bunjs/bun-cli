@@ -188,7 +188,8 @@ bun release
 打包后的文件就会出现在build目录下。
 ### mock
 如果你想使用mock服务。
-你需要先在config.js里配置好dev，和mock路径：
+
+1.你需要先在config.js里配置好dev，和mock路径：
 ```
 dev: {
     port: '8011',// 端口号
@@ -200,7 +201,7 @@ dev: {
     mockDir: './mock',// mock数据的路径
 },
 ```
-然后执行：
+2.然后执行：
 ```
 bun rundev
 ```

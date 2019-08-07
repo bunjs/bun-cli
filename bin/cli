@@ -63,7 +63,7 @@ function restartApp(app, cb) {
         pm2.restart(app, function(err, apps) {
             pm2.disconnect(); // Disconnects from PM2
             if (err) {
-                throw err;
+                // throw err;
                 process.exit()
             }
             console.log(chalk.green('\n √ Restart completed!'));

@@ -1,5 +1,6 @@
 # bun-cli
 bun-cli工具是一个融合了多种实用功能的前端命令行工具，它服务于bunjs框架，却不止于bunjs。
+
 [![NPM version](https://img.shields.io/npm/v/bunjs.svg)](https://www.npmjs.com/package/bunjs)
 [![NPM downloads](https://img.shields.io/npm/dm/bunjs.svg)](https://www.npmjs.com/package/bunjs)
 
@@ -187,7 +188,8 @@ bun release
 打包后的文件就会出现在build目录下。
 ### mock
 如果你想使用mock服务。
-你需要先在config.js里配置好dev，和mock路径：
+
+1.你需要先在config.js里配置好dev，和mock路径：
 ```
 dev: {
     port: '8011',// 端口号
@@ -199,7 +201,7 @@ dev: {
     mockDir: './mock',// mock数据的路径
 },
 ```
-然后执行：
+2.然后执行：
 ```
 bun rundev
 ```

@@ -84,6 +84,7 @@ module.exports = {
                 `${appName}/src/app/page/two/index.vue`,
                 `${appName}/server/action/show/Example.js`,
                 `${appName}/server/action/api/Api.js`,
+                `${appName}/server/common/BasePage.js`,
                 `${appName}/server/controller/Main.js`,
                 `${appName}/server/model/services/DataStation.js`,
                 `${appName}/server/model/services/page/ExampleHomeShow.js`,

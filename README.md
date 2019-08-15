@@ -84,7 +84,7 @@ bun init vueapp
 ```
 bun init vueappssr
 ```
-你还需要引入一个ssr插件：
+你还需要引入一个ssr插件（在project目录下安装）：
 ```
 npm i --save bun-vuessr-plugin
 ```

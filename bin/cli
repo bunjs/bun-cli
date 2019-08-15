@@ -244,7 +244,13 @@ program
             let ssr = options.ssr;
             let userConf = require(process.cwd() + '/config.js');
             let webpackConfig = '';
-            let vueSsrWebpackConfig = '';
+            let ssrWebpackConfig = '';
+            let appType = '';
+            if (userConf.supportFileType.indexOf('jsx') !== -1) {
+                appType = 'react';
+            } else if (userConf.supportFileType.indexOf('vue') !== -1) {
+                appType = 'vue';
+            }
             if (dev) {
                 process.env.NODE_ENV === 'development';
                 webpackConfig = require('../config/webpack.config-dev.js')(userConf);
@@ -256,7 +262,11 @@ program
                 webpackConfig = require('../config/webpack.config.js')(userConf);
             }
             if (userConf.ssr) {
-                vueSsrWebpackConfig = require('../config/webpack.config-vuessr.js')(userConf);
+                if (appType === 'vue') {
+                    ssrWebpackConfig = require('../config/webpack.config-vuessr.js')(userConf);
+                } else if (appType === 'react') {
+                    ssrWebpackConfig = require('../config/webpack.config-reactssr.js')(userConf);
+                }
             }
             function moveToProAndWatch() {
                 // 如果设置to参数，则移动build目录下的文件到指定project
@@ -274,7 +284,7 @@ program
                             if (stats) console.log(chalk.green(`File ${path} changed size to ${stats.size}`));
                             webpackBuild(webpackConfig).then(() => {
                                 if (userConf.ssr) {
-                                    webpackBuild(vueSsrWebpackConfig).then((stats) => {
+                                    webpackBuild(ssrWebpackConfig).then((stats) => {
                                         if (path) {
                                             // 如果设置to参数，则移动build目录下的文件到指定project
                                             moveAppToPro(appName, fileMap);
@@ -297,7 +307,7 @@ program
             webpackBuild(webpackConfig).then((stats) => {
                 try {
                     if (userConf.ssr) {
-                        webpackBuild(vueSsrWebpackConfig).then((stats) => {
+                        webpackBuild(ssrWebpackConfig).then((stats) => {
                             if (path) {
                                 moveToProAndWatch();
                             }

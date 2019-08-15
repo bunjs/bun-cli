@@ -5,7 +5,7 @@ module.exports = {
 			'./conf': `./build/conf/${appname}/`,
 			'./src/template': `./build/template/${appname}/`,
 			'./src/static': `./build/static/${appname}/`,
-			'./src': `./build/src/${appname}/`
+			// './src': `./build/src/${appname}/`
 		}
 	},
 	deployConf: {
@@ -15,7 +15,7 @@ module.exports = {
                 './build/conf/': `${projectPath}/conf/`,
                 './build/static/': `${projectPath}/static/`,
                 './build/template/': `${projectPath}/template/`,
-                './build/src/': `${projectPath}/src/`
+                // './build/src/': `${projectPath}/src/`
             };
 		}
 	},

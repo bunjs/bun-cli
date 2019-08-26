@@ -13,6 +13,12 @@ module.exports = (userConf) => {
     for (let [k, v] of Object.entries(userConf.globalPath)) {
         alias[k] = path.resolve(userConf.dirname, v);
     }
+    let staticPath = `/static/${appname}/`;
+    let staticDomain = userConf.publicStaticDomain;
+    if (process.env.NODE_ENV === 'development') {
+        staticPath = `/${appname}/`;
+        staticDomain = userConf.localStaticDomain;
+    }
 
     let webpackConfig = {
         mode: 'production',// development || production
@@ -20,7 +26,7 @@ module.exports = (userConf) => {
         output: {
         	// 此处告知 server bundle 使用 Node 风格导出模块(Node-style exports)
         	libraryTarget: 'commonjs2',
-            publicPath: userConf.isbun ? userConf.publicStaticDomain + `/static/${appname}/` : userConf.publicStaticDomain,
+            publicPath: userConf.isbun ? staticDomain + staticPath : staticDomain,
             path: path.resolve(userConf.dirname, userConf.output, userConf.isbun ? userConf.appname : ''),
             // path: userConf.dirname + `/build/static/${appname}`,
             filename: "server-bundle.min.js",
@@ -89,7 +95,7 @@ module.exports = (userConf) => {
                     ],
                 },
                 {
-                    test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf)$/,
+                    test: /\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/,
                     use: [
                         {
                             loader: 'url-loader',

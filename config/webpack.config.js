@@ -10,6 +10,9 @@ module.exports = (userConf) => {
     const config = require('./config');
 
     let plugins = [];
+    if (userConf.definePlugin && userConf.definePlugin.prod) {
+        plugins.push(new webpack.DefinePlugin(userConf.definePlugin.prod));
+    }
     if (userConf.manifest || userConf.isbun) {
         plugins.push(new ManifestPlugin({
             writeToFileEmit: true,
@@ -28,7 +31,7 @@ module.exports = (userConf) => {
         module: { // 在配置文件里添加JSON loader
             rules: [
                 {
-                    test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf)$/,
+                    test: /\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf)$/,
                     use: [
                         {
                             loader: 'url-loader',

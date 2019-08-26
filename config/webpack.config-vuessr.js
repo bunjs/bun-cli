@@ -15,6 +15,12 @@ module.exports = (userConf) => {
     for (let [k, v] of Object.entries(userConf.globalPath)) {
         alias[k] = path.resolve(userConf.dirname, v);
     }
+    let staticPath = `/static/${appname}/`;
+    let staticDomain = userConf.publicStaticDomain;
+    if (process.env.NODE_ENV === 'development') {
+        staticPath = `/${appname}/`;
+        staticDomain = userConf.localStaticDomain;
+    }
 
     let webpackConfig = {
         mode: 'production',// development || production
@@ -22,7 +28,7 @@ module.exports = (userConf) => {
         output: {
         	// 此处告知 server bundle 使用 Node 风格导出模块(Node-style exports)
         	libraryTarget: 'commonjs2',
-            publicPath: userConf.isbun ? userConf.publicStaticDomain + `/static/${appname}/` : userConf.publicStaticDomain,
+            publicPath: userConf.isbun ? staticDomain + staticPath : staticDomain,
             path: path.resolve(userConf.dirname, userConf.output, userConf.isbun ? userConf.appname : ''),
             // path: userConf.dirname + `/build/static/${appname}`,
             filename: "js/server-bundle.min_[chunkhash:8].js",
@@ -47,7 +53,7 @@ module.exports = (userConf) => {
 		    // 不要外置化 webpack 需要处理的依赖模块。
 		    // 你可以在这里添加更多的文件类型。例如，未处理 *.vue 原始文件，
 		    // 你还应该将修改 `global`（例如 polyfill）的依赖模块列入白名单
-		    whitelist: [/\.css$/]
+		    whitelist: [/\.css$/, /\.less$/, '@babel/polyfill', 'babel-polyfill', 'core-js']
 		}),
         module: { // 在配置文件里添加JSON loader
             rules: [
@@ -67,15 +73,27 @@ module.exports = (userConf) => {
                 {
                     test: /\.less$/,
                     use: [
-                        // 'vue-style-loader',
-                        'null-loader',
+                        'vue-style-loader',
+                        'css-loader',
+                        'less-loader',
+                        {
+                            loader: 'style-resources-loader',
+                            options: {
+                                injector: 'prepend',
+                                patterns: (userConf.globalStyle && userConf.globalStyle.length) ? userConf.globalStyle.map((val) => path.resolve(userConf.dirname, val)) : '',
+                                    // path.resolve(userConf.dirname, 'src/resource/style/public.less'),
+                                    // path.resolve(userConf.dirname, 'src/resource/style/theme.less')
+                            }
+                        },
+                        // 'null-loader',
                     ]
                 },
                 {
                     test: /\.css$/,
                     use: [
-                        // 'vue-style-loader',
-                        'null-loader',
+                        'vue-style-loader',
+                        'css-loader',
+                        // 'null-loader',
                     ]
                 },
                 {
@@ -104,13 +122,13 @@ module.exports = (userConf) => {
                     ],
                 },
                 {
-                    test: /\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf)$/,
+                    test: /\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$/,
                     use: [
                         {
                             loader: 'url-loader',
                             options:{
                                 limit: 5*1024,
-                                name:'img/[name].[hash:7].[ext]',
+                                name:process.env.NODE_ENV === 'development' ? 'img/[name].[ext]' : 'img/[name].[hash:7].[ext]',
                                 // publicPath: userConf.publicStaticDomain + `/static/${appname}`
                             }
                         }
@@ -122,6 +140,9 @@ module.exports = (userConf) => {
             splitChunks: false
         },
         plugins: [
+            new webpack.DefinePlugin({
+                IS_SERVER_RENDER: true
+            }),
             new VueLoaderPlugin(),
         	// 这是将服务器的整个输出
 			// 构建为单个 JSON 文件的插件。

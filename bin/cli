@@ -63,7 +63,7 @@ function restartApp(app, cb) {
         pm2.restart(app, function(err, apps) {
             pm2.disconnect(); // Disconnects from PM2
             if (err) {
-                // throw err;
+                throw err;
                 process.exit()
             }
             console.log(chalk.green('\n √ Restart completed!'));
@@ -252,10 +252,10 @@ program
                 appType = 'vue';
             }
             if (dev) {
-                process.env.NODE_ENV === 'development';
+                process.env.NODE_ENV = 'development';
                 webpackConfig = require('../config/webpack.config-dev.js')(userConf);
             } else {
-                process.env.NODE_ENV === 'production';
+                process.env.NODE_ENV = 'production';
                 if (test) {
                     userConf.publicStaticDomain = userConf.testStaticDomain;
                 }
@@ -274,7 +274,7 @@ program
                 let appName = files[0];
                 let fileMap = config.deployConf.fileMap(path);
                 moveAppToPro(appName, fileMap);
-                let projectName = path.replace(/[\.\.\/]*([/s/S]*)\/?/ig, '$1');
+                let projectName = path.replace(/.*?\/([/s/S]*)\/?/ig, '$1');
 
                 restartApp(projectName, () => {
                     if (options.watch) {

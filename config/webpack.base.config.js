@@ -135,6 +135,11 @@ module.exports = (userConf) => {
     let webpackCopyConf = [];
     if (userConf.isbun) {
         let wcc = config.webpackCopyConf(appname);
+        if (userConf.staticPath) {
+            wcc[userConf.staticPath] = `./build/static/${appname}/`;
+        } else {
+            wcc['./src/static'] = `./build/static/${appname}/`;
+        }
         for (let i in wcc) {
             webpackCopyConf.push(
                 {
@@ -146,10 +151,6 @@ module.exports = (userConf) => {
         }
     }
     plugins = plugins.concat([new CopyWebpackPlugin(webpackCopyConf)]);
-
-    if (userConf.definePlugin && userConf.definePlugin.dev) {
-        plugins.push(new webpack.DefinePlugin(userConf.definePlugin.dev));
-    }
     
     let alias = {};
     for (let [k, v] of Object.entries(userConf.globalPath)) {

@@ -4,7 +4,7 @@ module.exports = {
 			'./server': `./build/server/${appname}/`,
 			'./conf': `./build/conf/${appname}/`,
 			'./src/template': `./build/template/${appname}/`,
-			'./src/static': `./build/static/${appname}/`,
+			// './src/static': `./build/static/${appname}/`,
 			// './src': `./build/src/${appname}/`
 		}
 	},

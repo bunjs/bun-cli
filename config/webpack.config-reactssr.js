@@ -22,7 +22,7 @@ module.exports = (userConf) => {
 
     let webpackConfig = {
         mode: 'production',// development || production
-        entry: path.resolve(userConf.dirname, './src/app/base/index.js'),
+        entry: path.resolve(userConf.dirname, userConf.serverEntry),
         output: {
         	// 此处告知 server bundle 使用 Node 风格导出模块(Node-style exports)
         	libraryTarget: 'commonjs2',

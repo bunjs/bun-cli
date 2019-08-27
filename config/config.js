@@ -58,6 +58,24 @@ module.exports = {
             ];
 		}
 	},
+	reactappssr: {
+		downloadPath: 'bunjs/bun-reactapp-ssr',
+		fileMap: (appName) => {
+			return [
+                `${appName}/config.js`,
+                `${appName}/package.json`,
+                `${appName}/src/app/page/home/home.jsx`,
+                `${appName}/src/app/page/pageone/pageone.jsx`,
+                `${appName}/src/app/base/index.js`,
+                `${appName}/server/action/show/Example.js`,
+                `${appName}/server/action/api/Api.js`,
+                `${appName}/server/controller/Main.js`,
+                `${appName}/server/model/services/DataStation.js`,
+                `${appName}/server/model/services/page/ExampleHomeShow.js`,
+                `${appName}/server/model/services/page/ExampleOneShow.js`
+            ];
+		}
+	},
 	vueapp: {
 		downloadPath: 'bunjs/bun-vueapp',
 		fileMap: (appName) => {

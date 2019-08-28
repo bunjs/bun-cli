@@ -1,7 +1,7 @@
 module.exports = {
 	webpackCopyConf: (appname) => {
 		return {
-			'./server': `./build/server/${appname}/`,
+			'./server': `./build/app/${appname}/`,
 			'./conf': `./build/conf/${appname}/`,
 			'./src/template': `./build/template/${appname}/`,
 			// './src/static': `./build/static/${appname}/`,
@@ -11,7 +11,7 @@ module.exports = {
 	deployConf: {
 		fileMap: (projectPath) => {
 			return {
-                './build/server/': `${projectPath}/app/`,
+                './build/app/': `${projectPath}/app/`,
                 './build/conf/': `${projectPath}/conf/`,
                 './build/static/': `${projectPath}/static/`,
                 './build/template/': `${projectPath}/template/`,

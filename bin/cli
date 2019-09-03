@@ -276,7 +276,7 @@ program
             }
             function moveToProAndWatch() {
                 // 如果设置to参数，则移动build目录下的文件到指定project
-                let files = fs.readdirSync('./build/server/');
+                let files = fs.readdirSync('./build/app/');
                 let appName = files[0];
                 let fileMap = config.deployConf.fileMap(path);
                 moveAppToPro(appName, fileMap);

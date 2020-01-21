@@ -22,17 +22,22 @@ module.exports = (userConf) => {
     if (userConf.definePlugin && userConf.definePlugin.dev) {
         plugins.push(new webpack.DefinePlugin(userConf.definePlugin.dev));
     }
+    if (userConf.dev) {
+        plugins.push(new webpack.HotModuleReplacementPlugin({
+            multiStep: true,
+        }));
+    }
     if (userConf.manifest || userConf.isbun) {
         plugins.push(new ManifestPlugin({
             writeToFileEmit: true,
-            // publicPath: userConf.localStaticDomain + `/${appname}/`
+            // publicPath: userConf.localStaticDomain + userConf._appPath
         }));
     }
     const webpackConfig = merge(base, {
         devtool: '#cheap-module-eval-source-map',
         mode: 'development',// development || production
         output: {
-            publicPath: userConf.isbun ? userConf.localStaticDomain + `/${appname}/` : userConf.localStaticDomain,
+            publicPath: userConf.isbun ? userConf.localStaticDomain + userConf._appPath : userConf.localStaticDomain,
             filename: "js/[name].js",
             chunkFilename: "js/[name].chunk.js",
         },
@@ -56,9 +61,6 @@ module.exports = (userConf) => {
             minimize: false
         },
         plugins: [
-            new webpack.HotModuleReplacementPlugin({
-                multiStep: true,
-            }),
             new WebpackBundleSizeAnalyzerPlugin(userConf.dirname + '/plain-report.txt'),
             new MiniCssExtractPlugin({
                 filename: "css/[name].css",

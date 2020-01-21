@@ -8,6 +8,7 @@ module.exports = (userConf) => {
     const base = require('./webpack.base.config.js')(userConf);
     const path = require('path');
     const config = require('./config');
+    let staticPath = `/static${userConf._appPath}`;
 
     let plugins = [];
     if (userConf.definePlugin && userConf.definePlugin.prod) {
@@ -16,14 +17,14 @@ module.exports = (userConf) => {
     if (userConf.manifest || userConf.isbun) {
         plugins.push(new ManifestPlugin({
             writeToFileEmit: true,
-            publicPath: userConf.publicStaticDomain + `/static/${appname}/`
+            publicPath: userConf.publicStaticDomain + staticPath
         }));
     }
-
+    
     let webpackConfig = merge(base, {
         mode: 'production',// development || production
         output: {
-            publicPath: userConf.isbun ? userConf.publicStaticDomain + `/static/${appname}/` : userConf.publicStaticDomain,
+            publicPath: userConf.isbun ? userConf.publicStaticDomain + staticPath : userConf.publicStaticDomain,
             // path: userConf.dirname + `/build/static/${appname}`,
             filename: "js/[name].min_[chunkhash:8].js",
             chunkFilename: "js/[name].chunk.min_[chunkhash:8].js"

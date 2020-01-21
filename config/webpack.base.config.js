@@ -13,7 +13,7 @@ module.exports = (userConf) => {
     const path = require('path');
     const fs = require('fs');
 
-    const appname = userConf.appname; 
+    const appname = userConf.appname;
 
     //选择entry目录下的所有文件
     const opts = (function () {
@@ -22,21 +22,21 @@ module.exports = (userConf) => {
         // let files = fs.readdirSync(path.resolve(userConf.dirname, './src/entry'));
 
         for (let name in userConf.entry) {
-        	obj[name.split('.')[0]] = path.resolve(userConf.dirname, userConf.entry[name]);
+            obj[name.split('.')[0]] = path.resolve(userConf.dirname, userConf.entry[name]);
             // HtmlWebpackPlugin只在非bun模式下开启
             if (userConf.template && !userConf.isbun) {
-            	htmlplugins.push(new HtmlWebpackPlugin({
-                	// filename: name + '.html',
-			        template: userConf.template,
-			        inject: true,
-			        minify: {
-			            removeComments: true,
-			            collapseWhitespace: true,
-			            removeAttributeQuotes: true,
-			            // more options:
-			            // https://github.com/kangax/html-minifier#options-quick-reference
-			        }
-			    }));
+                htmlplugins.push(new HtmlWebpackPlugin({
+                    // filename: name + '.html',
+                    template: userConf.template,
+                    inject: true,
+                    minify: {
+                        removeComments: true,
+                        collapseWhitespace: true,
+                        removeAttributeQuotes: true,
+                        // more options:
+                        // https://github.com/kangax/html-minifier#options-quick-reference
+                    }
+                }));
             }
         }
 
@@ -46,7 +46,7 @@ module.exports = (userConf) => {
         };
     })();
 
-    
+
     const map = {
         jsx: {
             test: /\.jsx$/,
@@ -55,11 +55,26 @@ module.exports = (userConf) => {
                 /node_modules/.test(file) &&
                 !/\.vue\.js/.test(file)
             ),
-            use: [
-                {
-                    loader: 'babel-loader'
+            use: [{
+                loader: 'babel-loader',
+                options: {
+                    configFile: path.resolve(userConf.dirname, userConf.isbun ? './client/babel.config.js' : './babel.config.js')
                 }
-            ]
+            }]
+        },
+        tsx: {
+            test: /\.tsx$/,
+            // exclude: /node_modules/,
+            exclude: file => (
+                /node_modules/.test(file) &&
+                !/\.vue\.js/.test(file)
+            ),
+            use: [{
+                loader: 'babel-loader',
+                options: {
+                    configFile: path.resolve(userConf.dirname, userConf.isbun ? './client/babel.config.js' : './babel.config.js')
+                }
+            }]
         },
         less: {
             test: /\.less$/,
@@ -85,28 +100,24 @@ module.exports = (userConf) => {
                     options: {
                         injector: 'prepend',
                         patterns: (userConf.globalStyle && userConf.globalStyle.length) ? userConf.globalStyle.map((val) => path.resolve(userConf.dirname, val)) : '',
-                            // path.resolve(userConf.dirname, 'src/resource/style/public.less'),
-                            // path.resolve(userConf.dirname, 'src/resource/style/theme.less')
+                        // path.resolve(userConf.dirname, 'src/resource/style/public.less'),
+                        // path.resolve(userConf.dirname, 'src/resource/style/theme.less')
                     }
                 },
             ]
         },
         vue: {
             test: /\.vue$/,
-            use: [
-                {
-                    loader: "vue-loader",
-                }
-            ],
-            
+            use: [{
+                loader: "vue-loader",
+            }],
+
         },
         pug: {
             test: /\.pug$/,
-            use: [
-                {
-                    loader: "pug-plain-loader",
-                }
-            ],
+            use: [{
+                loader: "pug-plain-loader",
+            }],
         },
     }
 
@@ -129,29 +140,30 @@ module.exports = (userConf) => {
         }
     }
     if (opts.htmlplugins.length > 0) {
-    	plugins = plugins.concat(opts.htmlplugins);
+        plugins = plugins.concat(opts.htmlplugins);
     }
     // bun模式下拷贝指定目录
     let webpackCopyConf = [];
     if (userConf.isbun) {
-        let wcc = config.webpackCopyConf(appname);
+        let wcc = userConf.isSingle ?
+            config.webpackCopyConf(userConf._appPath) :
+            config.unsingleWebpackCopyConf(userConf._appPath);
+        let buildStaticPath = `./build/static${userConf._appPath}`;
         if (userConf.staticPath) {
-            wcc[userConf.staticPath] = `./build/static/${appname}/`;
+            wcc[userConf.staticPath] = buildStaticPath;
         } else {
-            wcc['./src/static'] = `./build/static/${appname}/`;
+            wcc['./client/static'] = buildStaticPath;
         }
         for (let i in wcc) {
-            webpackCopyConf.push(
-                {
-                   from: path.resolve(userConf.dirname, i),
-                   to: path.resolve(userConf.dirname, wcc[i]),
-                   ignore: ['.*']
-                }
-            )
+            webpackCopyConf.push({
+                from: path.resolve(userConf.dirname, i),
+                to: path.resolve(userConf.dirname, wcc[i]),
+                ignore: ['.*']
+            })
         }
     }
     plugins = plugins.concat([new CopyWebpackPlugin(webpackCopyConf)]);
-    
+
     let alias = {};
     for (let [k, v] of Object.entries(userConf.globalPath)) {
         alias[k] = path.resolve(userConf.dirname, v);
@@ -159,42 +171,40 @@ module.exports = (userConf) => {
     if (userConf.supportFileType.includes('vue')) {
         alias['vue$'] = 'vue/dist/vue.min.js';
     }
-   
+
     return {
         entry: opts.entries,
         output: {
-            path: path.resolve(userConf.dirname, userConf.output, userConf.isbun ? userConf.appname : ''),
+            path: path.resolve(userConf.dirname, userConf.output, userConf.isbun ? (userConf.isSingle ? '' : appname) : ''),
         },
-        resolve:{
-        	modules: [path.resolve(userConf.dirname, '/src'), 'node_modules'],
-        	extensions: ['.js', '.vue', '.jsx', '.json'],
+        resolve: {
+            modules: [path.resolve(userConf.dirname, '/client'), 'node_modules'],
+            extensions: ['.ts', '.tsx', '.js', '.vue', '.jsx', '.json'],
             alias: Object.assign({
-                Src: path.resolve(userConf.dirname, '/src/')
+                Src: path.resolve(userConf.dirname, '/client/')
             }, alias)
         },
         module: { // 在配置文件里添加JSON loader
-            rules: [
-                {
-                    test: /\.js$/,
+            rules: [{
+                    test: /\.(ts|js)$/,
                     // exclude: /node_modules/,
                     exclude: file => (
                         /node_modules/.test(file) &&
                         !/\.vue\.js/.test(file)
                     ),
-                    use: [
-                        {
-                            loader: 'babel-loader'
+                    use: [{
+                        loader: 'babel-loader',
+                        options: {
+                            configFile: path.resolve(userConf.dirname, userConf.isbun ? './client/babel.config.js' : './babel.config.js')
                         }
-                    ]
-                }, 
+                    }]
+                },
                 {
                     test: /\.json$/,
                     type: 'javascript/auto',
-                    use: [
-                        {
-                            loader: 'json-loader'
-                        }
-                    ]
+                    use: [{
+                        loader: 'json-loader'
+                    }]
                 },
                 {
                     test: /\.css$/,
@@ -249,7 +259,7 @@ module.exports = (userConf) => {
                     } else {
                         libsReg = new RegExp('[\\/]node_modules[\\/]', 'ig');
                     }
-                    
+
                     let cg = {
                         // 所有libs的模块打包
                         libs: {
@@ -276,15 +286,15 @@ module.exports = (userConf) => {
                         }
                     }
                     if (!userConf.cacheGroups || userConf.cacheGroups.length <= 0) {
-                    	userConf.cacheGroups = ['vendors', 'commons'];
+                        userConf.cacheGroups = ['vendors', 'commons'];
                     }
                     let res = {};
                     if (Array.isArray(userConf.cacheGroups)) {
-                    	for (let i = 0; i < userConf.cacheGroups.length; i++) {
-                    		res[userConf.cacheGroups[i]] = cg[userConf.cacheGroups[i]];
-                    	}
+                        for (let i = 0; i < userConf.cacheGroups.length; i++) {
+                            res[userConf.cacheGroups[i]] = cg[userConf.cacheGroups[i]];
+                        }
                     } else {
-                    	res[userConf.cacheGroups] = cg[userConf.cacheGroups];
+                        res[userConf.cacheGroups] = cg[userConf.cacheGroups];
                     }
                     return res;
                 })()
